@@ -13,7 +13,7 @@ import threading
 
 
 # Class definition of the calibration function
-class CalibrationNode(Node):
+class AVNode(Node):
 	def __init__(self):
 		super().__init__("av_camera_node")
 		self.get_logger().info("Calibration node is awake...")
@@ -33,11 +33,11 @@ class CalibrationNode(Node):
 		self.thread1.start()
 
 		# Publishers
-		self.frame_pub = self.create_publisher(Image, "frame", 10)
+		self.frame_pub = self.create_publisher(Image, "/camera/raw_frame", 10)
 		self.timer = self.create_timer(0.03, self.publish_frame)
 
 		# Service: stop acquisition
-		self.stop_service = self.create_service(CameraState, "cam_state", self.acquisition_service)
+		self.stop_service = self.create_service(CameraState, "/camera/get_cam_state", self.acquisition_service)
 
 	# This function stops/enable the acquisition stream
 	def acquisition_service(self, request, response):
@@ -54,16 +54,28 @@ class CalibrationNode(Node):
 			# Open the cam and set the mode
 			self.cam_obj = vimba.camera(self.cam_id)
 			self.cam_obj.open()
-			self.cam_obj.arm("SingleFrame")
-			self.get_logger().info("Fame acquisition has started.")
-			
-			while self.start_acquisition:
-				current_frame = self.cam_obj.acquire_frame()
-				self.frame = current_frame.buffer_data_numpy()
 
-			self.cam_obj.disarm()
-			self.cam_obj.close()
+			try:
+				self.cam_obj.arm("SingleFrame")
+				self.get_logger().info("Fame acquisition has started.")
 				
+				while self.start_acquisition:
+					current_frame = self.cam_obj.acquire_frame()
+					self.frame = current_frame.buffer_data_numpy()
+
+				self.cam_obj.disarm()
+				self.cam_obj.close()
+			except:
+				self.cam_obj.disarm()
+				self.cam_obj.close()
+
+				
+	# This function stops/enable the acquisition stream
+	def exit(self):
+		self.start_acquisition = False
+		self.thread1.join()
+
+
 
 	# Publisher function
 	def publish_frame(self):
@@ -80,9 +92,20 @@ class CalibrationNode(Node):
 def main(args=None):
 
 	rclpy.init(args=args)
-	node = CalibrationNode()
-	rclpy.spin(node)
-	rclpy.shutdown()
+	node = AVNode()
+	try:
+		rclpy.spin(node)
+	except KeyboardInterrupt:
+		print('server stopped cleanly')
+		node.exit()
+	except BaseException:
+		print('exception in server:', file=sys.stderr)
+		raise
+	finally:
+		# Destroy the node explicitly
+		# (optional - Done automatically when node is garbage collected)
+		node.destroy_node()
+		rclpy.shutdown() 
 
 
 # Main
