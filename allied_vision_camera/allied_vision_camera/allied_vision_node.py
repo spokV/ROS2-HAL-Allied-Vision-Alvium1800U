@@ -57,7 +57,7 @@ class AVNode(Node):
 
 			try:
 				self.cam_obj.arm("SingleFrame")
-				self.get_logger().info("Fame acquisition has started.")
+				self.get_logger().info("Frame acquisition has started.")
 				
 				while self.start_acquisition:
 					current_frame = self.cam_obj.acquire_frame()
@@ -84,7 +84,6 @@ class AVNode(Node):
 			return
 
 		self.frame_pub.publish(self.bridge.cv2_to_imgmsg(self.frame))
-		self.get_logger().info("Frame published.")
 
 
 
