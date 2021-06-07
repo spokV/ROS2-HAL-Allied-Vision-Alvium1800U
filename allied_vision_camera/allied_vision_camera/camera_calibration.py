@@ -15,9 +15,9 @@ import threading
 
 
 # Path to store the calibration file
-CALIB_PATH = "./src/camera/camera/"
+CALIB_PATH = "./src/AlliedVision_Alvium1800U/allied_vision_camera/allied_vision_camera/"
 CALIB_FILE = "calib_params.json"
-NUM_CALIB_PICS = 15
+NUM_CALIB_PICS = 40
 CRITERIA = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 SQUARE_SIZE = 28.0 # mm
 
@@ -39,7 +39,7 @@ class CalibrationNode(Node):
 		self.calib_pics = []
 
 		# Subscription from camera stream
-		self.frame_sub = self.create_subscription(Image, "frame", self.callback_frame, 10)
+		self.frame_sub = self.create_subscription(Image, "/camera/raw_frame", self.callback_frame, 10)
 
 		# Start calibration
 		self.thread1 = threading.Thread(target=self.calib_process, daemon=True)
@@ -179,8 +179,20 @@ class CalibrationNode(Node):
 def main(args=None):
 	rclpy.init(args=args)
 	node = CalibrationNode()
-	rclpy.spin(node)
-	rclpy.shutdown()
+	
+	try:
+		rclpy.spin(node)
+	except KeyboardInterrupt:
+		pass
+	except BaseException:
+		print('exception in server:', file=sys.stderr)
+		raise
+	finally:
+		# Destroy the node explicitly
+		# (optional - Done automatically when node is garbage collected)
+		node.destroy_node()
+		rclpy.shutdown() 
+
 
 
 # Main
