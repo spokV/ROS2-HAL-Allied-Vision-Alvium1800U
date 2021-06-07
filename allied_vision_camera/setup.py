@@ -20,10 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-        "camera_node = allied_vision_camera.camera_node:main",
         "calibration_node = allied_vision_camera.camera_calibration:main",
-        "aruco_detector = allied_vision_camera.aruco_pose_estimator:main",
-        "pose_filter = allied_vision_camera.pose_filt_cmd:main",
         "av_node = allied_vision_camera.allied_vision_node:main"
         ],
     },
