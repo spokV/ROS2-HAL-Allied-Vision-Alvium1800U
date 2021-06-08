@@ -9,14 +9,18 @@ from sensor_msgs.msg import Image
 from allied_vision_camera_interfaces.srv import CameraState
 from cv_bridge import CvBridge
 import threading
+import sys
 
-
+from std_msgs.msg import Header
+import tf2_ros
+import geometry_msgs
+from scipy.spatial.transform import Rotation as R
 
 # Class definition of the calibration function
 class AVNode(Node):
 	def __init__(self):
 		super().__init__("av_camera_node")
-		self.get_logger().info("Calibration node is awake...")
+		self.get_logger().info("AV Camera node is awake...")
 		
 		# Parameters declaration
 		self.declare_parameter("cam_id", 0)
@@ -33,11 +37,12 @@ class AVNode(Node):
 		self.thread1.start()
 
 		# Publishers
-		self.frame_pub = self.create_publisher(Image, "/camera/raw_frame", 10)
+		self.frame_pub = self.create_publisher(Image, "/camera/raw_frame", 2)
 		self.timer = self.create_timer(0.03, self.publish_frame)
 
 		# Service: stop acquisition
 		self.stop_service = self.create_service(CameraState, "/camera/get_cam_state", self.acquisition_service)
+
 
 	# This function stops/enable the acquisition stream
 	def acquisition_service(self, request, response):
@@ -83,7 +88,11 @@ class AVNode(Node):
 		if len(self.frame) == 0:
 			return
 
-		self.frame_pub.publish(self.bridge.cv2_to_imgmsg(self.frame))
+		self.image_message = self.bridge.cv2_to_imgmsg(self.frame, encoding="mono8")
+		self.image_message.header = Header()
+		self.image_message.header.stamp = self.get_clock().now().to_msg()
+		self.image_message.header.frame_id = "Camera_Base"
+		self.frame_pub.publish(self.image_message)
 
 
 
