@@ -180,20 +180,19 @@ class CalibrationNode(Node):
 def main(args=None):
 	rclpy.init(args=args)
 	node = CalibrationNode()
-	
 	try:
 		rclpy.spin(node)
 	except KeyboardInterrupt:
-		pass
+		print('Calibration Node stopped cleanly')
+		node.exit()
 	except BaseException:
-		print('exception in server:', file=sys.stderr)
+		print('Exception in Calibration Node:', file=sys.stderr)
 		raise
 	finally:
 		# Destroy the node explicitly
 		# (optional - Done automatically when node is garbage collected)
 		node.destroy_node()
 		rclpy.shutdown() 
-
 
 
 # Main
