@@ -107,7 +107,7 @@ def main(args=None):
 		print('AlliedVision Node stopped cleanly')
 		node.exit()
 	except BaseException:
-		print('Exception in AV Node:', file=sys.stderr)
+		print('Exception in AlliedVision Node:', file=sys.stderr)
 		raise
 	finally:
 		# Destroy the node explicitly
