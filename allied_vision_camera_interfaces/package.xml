@@ -3,9 +3,9 @@
 <package format="3">
   <name>allied_vision_camera_interfaces</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="marco.lapolla5@gmail.com">marco</maintainer>
-  <license>TODO: License declaration</license>
+  <description>Interfaces for Camera Allied Vision Alvium</description>
+  <maintainer email="alessandro.scarciglia-somministrato@thalesaleniaspace.com ">Alessandro Scarciglia</maintainer>
+  <license>BSD</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
