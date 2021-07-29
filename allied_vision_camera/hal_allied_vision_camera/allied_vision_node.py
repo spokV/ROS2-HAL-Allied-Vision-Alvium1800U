@@ -91,7 +91,7 @@ class AVNode(Node):
 		self.image_message = self.bridge.cv2_to_imgmsg(self.frame, encoding="mono8")
 		self.image_message.header = Header()
 		self.image_message.header.stamp = self.get_clock().now().to_msg()
-		self.image_message.header.frame_id = "Camera_Base"
+		self.image_message.header.frame_id = "parking_camera_link"
 		self.frame_pub.publish(self.image_message)
 
 
