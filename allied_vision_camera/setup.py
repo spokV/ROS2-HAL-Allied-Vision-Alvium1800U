@@ -2,7 +2,7 @@ import os
 from glob import glob
 from setuptools import setup
 
-package_name = 'allied_vision_camera'
+package_name = 'hal_allied_vision_camera'
 
 setup(
     name=package_name,

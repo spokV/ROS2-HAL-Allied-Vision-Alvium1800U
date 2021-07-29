@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>allied_vision_camera</name>
+  <name>hal_allied_vision_camera</name>
   <version>0.0.0</version>
   <description>HAL for Camera Allied Vision Alvium</description>
   <maintainer email="alessandro.scarciglia-somministrato@thalesaleniaspace.com">Alessandro Scarciglia</maintainer>
