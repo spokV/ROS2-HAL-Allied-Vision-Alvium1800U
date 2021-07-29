@@ -24,8 +24,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-        "calibration_node = allied_vision_camera.camera_calibration:main",
-        "av_node = allied_vision_camera.allied_vision_node:main"
+        "calibration_node = hal_allied_vision_camera.camera_calibration:main",
+        "av_node = hal_allied_vision_camera.allied_vision_node:main"
         ],
     },
 )
