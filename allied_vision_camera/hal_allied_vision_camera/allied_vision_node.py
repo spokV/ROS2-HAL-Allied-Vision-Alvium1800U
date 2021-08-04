@@ -56,23 +56,31 @@ class AVNode(Node):
 		
 		with Vimba() as vimba:
 			
-			# Open the cam and set the mode
-			self.cam_obj = vimba.camera(self.cam_id)
-			self.cam_obj.open()
+			cam_found = True
 
 			try:
-				self.cam_obj.arm("SingleFrame")
-				self.get_logger().info("Frame acquisition has started.")
-				
-				while self.start_acquisition:
-					current_frame = self.cam_obj.acquire_frame()
-					self.frame = current_frame.buffer_data_numpy()
+				# Open the cam and set the mode
+				self.cam_obj = vimba.camera(self.cam_id)
+				self.cam_obj.open()
 
-				self.cam_obj.disarm()
-				self.cam_obj.close()
 			except:
-				self.cam_obj.disarm()
-				self.cam_obj.close()
+				self.get_logger().info("No AlliedVision Alvium cameras found, check connection.")
+				cam_found = False
+
+			if cam_found:
+				try:
+					self.cam_obj.arm("SingleFrame")
+					self.get_logger().info("Frame acquisition has started.")
+					
+					while self.start_acquisition:
+						current_frame = self.cam_obj.acquire_frame()
+						self.frame = current_frame.buffer_data_numpy()
+
+					self.cam_obj.disarm()
+					self.cam_obj.close()
+				except:
+					self.cam_obj.disarm()
+					self.cam_obj.close()
 
 				
 	# This function stops/enable the acquisition stream
