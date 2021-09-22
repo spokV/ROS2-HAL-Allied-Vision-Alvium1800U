@@ -16,7 +16,7 @@ from ament_index_python.packages import get_package_share_directory
 
 package_share_directory = get_package_share_directory('allied_vision_camera')
 # Path to store the calibration file
-CALIB_PATH = package_share_directory + "/resources/"
+CALIB_PATH = package_share_directory + "/calibration/"
 CALIB_FILE = "calib_params.json"
 NUM_CALIB_PICS = 40
 CRITERIA = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
