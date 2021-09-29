@@ -3,7 +3,6 @@
 # Libraries
 import rclpy
 from rclpy.node import Node
-import cv2
 from pymba import *
 from sensor_msgs.msg import Image
 from allied_vision_camera_interfaces.srv import CameraState
@@ -12,8 +11,6 @@ import threading
 import sys
 
 from std_msgs.msg import Header
-import tf2_ros
-import geometry_msgs
 from scipy.spatial.transform import Rotation as R
 
 # Class definition of the calibration function
@@ -35,11 +32,20 @@ class AVNode(Node):
         self.thread1 = threading.Thread(target=self.get_frame, daemon=True)
         self.thread1.start()
 
+        self.declare_parameter("publishers.raw_frame", "/parking_camera/raw_frame")
+        self.raw_frame_topic = self.get_parameter("publishers.raw_frame").value
+
+        self.declare_parameter("services.stop_camera", "/parking_camera/stop_camera")
+        self.stop_cam_service = self.get_parameter("services.stop_camera").value
+
+        self.declare_parameter("frames.camera_link", "parking_camera_link")
+        self.camera_link = self.get_parameter("frames.camera_link").value
+
         # Publishers
-        self.frame_pub = self.create_publisher(Image, "/parking_camera/raw_frame", 1)
+        self.frame_pub = self.create_publisher(Image, self.raw_frame_topic, 1)
 
         # Service: stop acquisition
-        self.stop_service = self.create_service(CameraState, "/parking_camera/get_cam_state", self.acquisition_service)
+        self.stop_service = self.create_service(CameraState, self.stop_cam_service, self.acquisition_service)
 
 
     # This function stops/enable the acquisition stream
@@ -123,7 +129,7 @@ class AVNode(Node):
         self.image_message = self.bridge.cv2_to_imgmsg(self.frame, encoding="mono8")
         self.image_message.header = Header()
         self.image_message.header.stamp = self.get_clock().now().to_msg()
-        self.image_message.header.frame_id = "parking_camera_link"
+        self.image_message.header.frame_id = self.camera_link
         self.frame_pub.publish(self.image_message)
 
 
@@ -144,7 +150,6 @@ def main(args=None):
     finally:
         # Destroy the node explicitly
         # (optional - Done automatically when node is garbage collected)
-        node.destroy_node()
         rclpy.shutdown() 
 
 
