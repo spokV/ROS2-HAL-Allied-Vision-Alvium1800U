@@ -13,12 +13,10 @@ from launch.actions.execute_process import ExecuteProcess
 
 def generate_launch_description():
     return LaunchDescription([
-        
         Node(
             package='hal_allied_vision_camera',
-            namespace='camera',
             executable='av_node',
-            name='av_node'
+            name='av_node',
             output={
                     "stdout": "screen",
                     "stderr": "screen",
