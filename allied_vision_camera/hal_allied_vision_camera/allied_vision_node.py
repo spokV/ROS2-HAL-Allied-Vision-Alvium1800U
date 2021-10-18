@@ -10,6 +10,8 @@ from cv_bridge import CvBridge
 import threading
 import sys
 
+import numpy as np
+
 from std_msgs.msg import Header
 from scipy.spatial.transform import Rotation as R
 
@@ -37,6 +39,12 @@ class AVNode(Node):
 
         self.declare_parameter("services.stop_camera", "/parking_camera/stop_camera")
         self.stop_cam_service = self.get_parameter("services.stop_camera").value
+
+        self.declare_parameter("flip_horizontally", "False")
+        self.flip_horizontally = self.get_parameter("flip_horizontally").value
+
+        self.declare_parameter("flip_vertically", "False")
+        self.flip_vertically = self.get_parameter("flip_vertically").value
 
         self.declare_parameter("frames.camera_link", "parking_camera_link")
         self.camera_link = self.get_parameter("frames.camera_link").value
@@ -125,6 +133,11 @@ class AVNode(Node):
         
         if len(self.frame) == 0:
             return
+        
+        if self.flip_vertically:
+            self.frame = np.flip(self.frame, axis=0)
+        if self.self.flip_horizontally:
+            self.frame = np.flip(self.frame, axis=1)
 
         self.image_message = self.bridge.cv2_to_imgmsg(self.frame, encoding="mono8")
         self.image_message.header = Header()
