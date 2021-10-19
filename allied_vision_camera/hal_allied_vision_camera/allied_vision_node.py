@@ -110,8 +110,11 @@ class AVNode(Node):
                     self.get_logger().info("Frame acquisition has started.")
                     
                     while self.start_acquisition:
+                        print("A")
                         current_frame = self.cam_obj.acquire_frame()
+                        print("B")
                         self.frame = current_frame.buffer_data_numpy()
+                        print("C")
                         self.publish_frame()
 
                     self.cam_obj.disarm()
@@ -132,13 +135,18 @@ class AVNode(Node):
     def publish_frame(self):
         
         if len(self.frame) == 0:
+            print("No Image Returned")
             return
         
+        print("D")
         if self.flip_vertically:
             self.frame = np.flip(self.frame, axis=0)
-        if self.self.flip_horizontally:
+
+        print("E")
+        if self.flip_horizontally:
             self.frame = np.flip(self.frame, axis=1)
 
+        print("QUI")
         self.image_message = self.bridge.cv2_to_imgmsg(self.frame, encoding="mono8")
         self.image_message.header = Header()
         self.image_message.header.stamp = self.get_clock().now().to_msg()
