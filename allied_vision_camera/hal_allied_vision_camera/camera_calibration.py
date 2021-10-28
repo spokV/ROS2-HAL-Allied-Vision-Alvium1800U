@@ -16,11 +16,11 @@ from time import sleep
 import threading
 from ament_index_python.packages import get_package_share_directory
 
-package_share_directory = get_package_share_directory('allied_vision_camera')
+package_share_directory = get_package_share_directory('hal_allied_vision_camera')
 # Path to store the calibration file
 CALIB_PATH = package_share_directory + "/calibration/"
 CALIB_FILE = "calib_params.json"
-NUM_CALIB_PICS = 40
+NUM_CALIB_PICS = 100
 CRITERIA = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 SQUARE_SIZE = 28.0 # mm
 
@@ -33,16 +33,31 @@ class CalibrationNode(Node):
 
 		# Parameters declarations
 		self.declare_parameter("board_dim", [6, 8])
+		self.board_dim = self.get_parameter("board_dim").value
+
+		self.declare_parameter("subscribers.camera", "/camera/raw_frame")
+		self.camera_topic = self.get_parameter("subscribers.camera").value
+
+		self.declare_parameter("auto_capture.mode", "True")
+		self.auto_capture = self.get_parameter("auto_capture.mode").value
+
+		self.declare_parameter("auto_capture.time_for_frame", "True")
+		self.time_for_frame = self.get_parameter("auto_capture.time_for_frame").value
+
+		self.declare_parameter("calibration_path", "auto")
+		self.calibration_path = self.get_parameter("calibration_path").value
+
+		if self.calibration_path != "auto":
+			CALIB_PATH = self.calibration_path
 		
 		# Class attributes
 		self.bridge = CvBridge()
 		self.current_frame = []
-		self.board_dim = self.get_parameter("board_dim").value
 		self.calib_params = {"mtx": [], "dist": []}
 		self.calib_pics = []
 
 		# Subscription from camera stream
-		self.frame_sub = self.create_subscription(Image, "/camera/raw_frame", self.callback_frame, 10)
+		self.frame_sub = self.create_subscription(Image, self.camera_topic, self.callback_frame, 1)
 
 		# Start calibration
 		self.thread1 = threading.Thread(target=self.calib_process, daemon=True)
@@ -83,7 +98,12 @@ class CalibrationNode(Node):
 
 	# This function let the user save 15 pics of a checkerboard
 	def take_calib_pics(self):
-		print("\n======== KEYBOARD COMMANDS ========\n\nq - quit pictures acquisition\nc - capture actual frame\n\n")
+		if not self.auto_capture:
+			print("\n======== KEYBOARD COMMANDS ========\n\nq - quit pictures acquisition\nc - capture actual frame\n\n")
+		else:
+			print("\nAuto-Capture - Taking 1 Frame each {0} sec \n\n".format(self.time_for_frame))
+        	self.timer = self.create_timer(self.time_for_frame, self.update_frames) # 50 Hz
+
 		
 		while True:
 			cv2.imshow("LiveCamera", self.current_frame)
@@ -93,14 +113,15 @@ class CalibrationNode(Node):
 				print("Calibration process has been stopped.")
 				return False
 			if key == ord("c"):
-				self.calib_pics.append(self.current_frame)
-				print("Picture " + str(len(self.calib_pics)) + " out of " + str(NUM_CALIB_PICS))
-				if len(self.calib_pics) == NUM_CALIB_PICS:
-					print(f"{NUM_CALIB_PICS} have been taken successfully.\n")
-					cv2.destroyAllWindows()
-					return True
+				self.update_frames()
 
-
+	def update_frames(self):
+		self.calib_pics.append(self.current_frame)
+		print("Picture " + str(len(self.calib_pics)) + " out of " + str(NUM_CALIB_PICS))
+		if len(self.calib_pics) == NUM_CALIB_PICS:
+			print(f"{NUM_CALIB_PICS} have been taken successfully.\n")
+			cv2.destroyAllWindows()
+			return True
 
 	# This functions drives the user to the camera calibration process
 	def calibrate_cam(self):
@@ -137,12 +158,6 @@ class CalibrationNode(Node):
 
 			    corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIA)
 			    imgpoints.append(corners2)
-
-			    # Draw and display the corners
-			    frame = cv2.drawChessboardCorners(frame, (self.board_dim[1], self.board_dim[0]), corners2, ret)
-			    cv2.imshow('Frame', frame)
-			    cv2.waitKey(0)
-
 		
 		cv2.destroyAllWindows()
 
@@ -159,23 +174,16 @@ class CalibrationNode(Node):
 
 		print("mean error: " + str(tot_error/len(objpoints)) + "pixels" + "\n")
 
-		# Ask the user if he/she is satisfied by the reached precision
-		if input("Do you want to store the calibration parameters? [y/else]:  ") == "y":
+		# Adjust parameters to be serializable for JSON 
+		self.calib_params["mtx"] = [self.calib_params["mtx"].flatten()[i] for i in range(9)]
+		self.calib_params["dist"] = [self.calib_params["dist"].flatten()[i] for i in range(5)]
 
-			# Adjust parameters to be serializable for JSON 
-			self.calib_params["mtx"] = [self.calib_params["mtx"].flatten()[i] for i in range(9)]
-			self.calib_params["dist"] = [self.calib_params["dist"].flatten()[i] for i in range(5)]
-			self.calib_params["timestamp"] = time.strftime("%H:%M:%S")
+		# Write on the calibration params file	
+		with open(CALIB_PATH+CALIB_FILE, "w") as outfile:
+			json.dump(self.calib_params, outfile)
 
-			# Write on the calibration params file	
-			with open(CALIB_PATH+CALIB_FILE, "w") as outfile:
-				json.dump(self.calib_params, outfile)
-			print("Calibration has been completed successfully.\nCalibration path: " + CALIB_PATH + CALIB_FILE)
-			exit(0)
-		else:
-			print("Calibration parameters have been rejected.")
-			exit(0)
-
+		print("Calibration has been completed successfully.\nCalibration path: " + CALIB_PATH + CALIB_FILE)
+		
 
 
 # Main loop function
@@ -186,14 +194,12 @@ def main(args=None):
 		rclpy.spin(node)
 	except KeyboardInterrupt:
 		print('Calibration Node stopped cleanly')
-		node.exit()
 	except BaseException:
 		print('Exception in Calibration Node:', file=sys.stderr)
 		raise
 	finally:
 		# Destroy the node explicitly
 		# (optional - Done automatically when node is garbage collected)
-		node.destroy_node()
 		rclpy.shutdown() 
 
 
