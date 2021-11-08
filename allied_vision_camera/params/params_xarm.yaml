@@ -8,3 +8,6 @@ av_node:
 
     frames: 
       camera_link: wrist_camera_link
+      
+    flip_vertically: False
+    flip_horizontally: False

@@ -8,3 +8,6 @@ av_node:
 
     frames: 
       camera_link: parking_camera_link
+      
+    flip_vertically: True
+    flip_horizontally: False
