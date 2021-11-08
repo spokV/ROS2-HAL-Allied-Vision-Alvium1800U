@@ -1,7 +1,7 @@
 calibration_node:
   ros__parameters:
 
-    number_of_images_to_calibrate: 100
+    number_of_images_to_calibrate: 120
     board_dim: [8, 6]
 
     subscribers:
@@ -11,4 +11,5 @@ calibration_node:
       mode: True            # Capture an image every
       time_for_frame: 1.0   # sec
     
-    calibration_path: auto  # Specify absolute path instead
+    #calibration_path: auto  # Specify absolute path instead
+    calibration_path: /home/marco/pasqua_devel/src/HAL_AlliedVision_Alvium/allied_vision_camera/calibration/

@@ -35,7 +35,6 @@ class CalibrationNode(Node):
         self.declare_parameter("number_of_images_to_calibrate", 10)
         self.number_of_images_to_calibrate = int(self.get_parameter("number_of_images_to_calibrate").value)
 
-
         self.declare_parameter("board_dim", [6, 8])
         self.board_dim = self.get_parameter("board_dim").value
 
@@ -118,6 +117,8 @@ class CalibrationNode(Node):
                 return False
             if key == ord("c"):
                 self.update_frames()
+            if self.stop_acquisition:
+                return True
 
     def update_frames(self):
 
@@ -143,6 +144,8 @@ class CalibrationNode(Node):
             self.get_logger().info("Calibration failed: pictures have not been captured correctly.")
             exit(0)
 
+        self.get_logger().info("Calibration process started")
+
         # Calibration process using the taken pictures.
         # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
         objp = np.zeros((self.board_dim[0] * self.board_dim[1], 3), np.float32)
@@ -152,6 +155,7 @@ class CalibrationNode(Node):
         objpoints = [] # 3d point in real world space
         imgpoints = [] # 2d points in image plane.
 
+        self.count_images = 0
         for frame in self.calib_pics:
 
             if len(frame.shape) == 3:
@@ -168,8 +172,12 @@ class CalibrationNode(Node):
 
                 corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIA)
                 imgpoints.append(corners2)
+
+                self.count_images = self.count_images + 1
         
-        cv2.destroyAllWindows()
+        self.get_logger().info("count_images: {0}".format(self.count_images))
+
+        self.get_logger().info("Obtaining calibration parameters")
 
         # Obtain calibration parameters
         ret, self.calib_params["mtx"], self.calib_params["dist"], rvecs, tvecs = cv2.calibrateCamera(objpoints, \

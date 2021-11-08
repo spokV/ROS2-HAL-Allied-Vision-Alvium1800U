@@ -9,5 +9,5 @@ av_node:
     frames: 
       camera_link: camera_link
       
-    flip_vertically: False
+    flip_vertically: True
     flip_horizontally: False
