@@ -46,6 +46,10 @@ class AVNode(Node):
         self.declare_parameter("flip_vertically", "False")
         self.flip_vertically = self.get_parameter("flip_vertically").value
 
+
+        self.get_logger().info("flip_vertically: {0}".format(self.flip_vertically))
+        self.get_logger().info("flip_horizontally: {0}".format(self.flip_horizontally))
+
         self.declare_parameter("frames.camera_link", "parking_camera_link")
         self.camera_link = self.get_parameter("frames.camera_link").value
 
