@@ -9,8 +9,10 @@ from allied_vision_camera_interfaces.srv import CameraState
 from cv_bridge import CvBridge
 import threading
 import sys
+import math
 
 import numpy as np
+import cv2 as cv
 
 from std_msgs.msg import Header
 from scipy.spatial.transform import Rotation as R
@@ -139,11 +141,20 @@ class AVNode(Node):
             print("No Image Returned")
             return
         
-        if self.flip_vertically:
-            self.frame = np.flip(self.frame, axis=0)
+        angle = 0.0
+        if self.flip_horizontally and not self.flip_vertically:
+            angle = 90.0
 
-        if self.flip_horizontally:
-            self.frame = np.flip(self.frame, axis=1)
+        if self.flip_vertically and not self.flip_horizontally:
+            angle = 180.0
+        
+        if self.flip_vertically and self.flip_horizontally:
+            angle = 270.0
+        
+        if angle != 0.0:
+            image_center = tuple(np.array(self.frame.shape[1::-1]) / 2)
+            rot_mat = cv.getRotationMatrix2D(image_center, angle, 1.0)
+            self.frame = cv.warpAffine(self.frame, rot_mat, self.frame.shape[1::-1], flags=cv.INTER_LINEAR)
 
         self.image_message = self.bridge.cv2_to_imgmsg(self.frame, encoding="mono8")
         self.image_message.header = Header()
