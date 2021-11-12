@@ -1,0 +1,13 @@
+av_node:
+  ros__parameters:
+    publishers:
+      raw_frame: /wac_camera/raw_frame
+
+    services:
+      stop_camera: /wac_camera/get_cam_state
+
+    frames: 
+      camera_link: wac_camera_link
+      
+    flip_vertically: True
+    flip_horizontally: False
