@@ -21,7 +21,6 @@ from scipy.spatial.transform import Rotation as R
 class AVNode(Node):
     def __init__(self):
         super().__init__("av_camera_node")
-        self.get_logger().info("AV Camera node is awake...")
         
         # Parameters declaration
         self.declare_parameter("cam_id", 1)
@@ -48,10 +47,6 @@ class AVNode(Node):
         self.declare_parameter("flip_vertically", "False")
         self.flip_vertically = self.get_parameter("flip_vertically").value
 
-
-        self.get_logger().info("flip_vertically: {0}".format(self.flip_vertically))
-        self.get_logger().info("flip_horizontally: {0}".format(self.flip_horizontally))
-
         self.declare_parameter("frames.camera_link", "parking_camera_link")
         self.camera_link = self.get_parameter("frames.camera_link").value
 
@@ -60,6 +55,7 @@ class AVNode(Node):
 
         # Service: stop acquisition
         self.stop_service = self.create_service(CameraState, self.stop_cam_service, self.acquisition_service)
+        self.get_logger().info("[AV Camera] Node Ready")
 
 
     # This function stops/enable the acquisition stream
@@ -107,13 +103,13 @@ class AVNode(Node):
                 '''
 
             except:
-                self.get_logger().info("No AlliedVision Alvium cameras found, check connection.")
+                self.get_logger().info("[AV Camera] No AlliedVision Alvium cameras found, check connection.")
                 cam_found = False
 
             if cam_found:
                 try:
                     self.cam_obj.arm("SingleFrame")
-                    self.get_logger().info("Frame acquisition has started.")
+                    self.get_logger().info("[AV Camera] Frame acquisition has started.")
                     
                     while self.start_acquisition:
                         current_frame = self.cam_obj.acquire_frame()
@@ -138,7 +134,7 @@ class AVNode(Node):
     def publish_frame(self):
         
         if len(self.frame) == 0:
-            print("No Image Returned")
+            self.get_logger().info("[AV Camera] No Image Returned")
             return
         
         angle = 0.0
@@ -172,14 +168,12 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        print('AlliedVision Node stopped cleanly')
+        node.get_logger().info('[AV Camera] Node stopped cleanly')
         node.exit()
     except BaseException:
-        print('Exception in AlliedVision Node:', file=sys.stderr)
+        node.get_logger().info('[AV Camera] Exception:', file=sys.stderr)
         raise
     finally:
-        # Destroy the node explicitly
-        # (optional - Done automatically when node is garbage collected)
         rclpy.shutdown() 
 
 
