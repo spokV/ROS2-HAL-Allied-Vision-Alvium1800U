@@ -9,5 +9,5 @@ av_node:
     frames: 
       camera_link: wrist_camera_link
       
-    flip_vertically: True
-    flip_horizontally: False
+    flip_vertically: False
+    flip_horizontally: True
