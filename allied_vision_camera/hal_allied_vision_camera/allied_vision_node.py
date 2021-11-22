@@ -41,11 +41,8 @@ class AVNode(Node):
         self.declare_parameter("services.stop_camera", "/parking_camera/stop_camera")
         self.stop_cam_service = self.get_parameter("services.stop_camera").value
 
-        self.declare_parameter("flip_horizontally", "False")
-        self.flip_horizontally = self.get_parameter("flip_horizontally").value
-
-        self.declare_parameter("flip_vertically", "False")
-        self.flip_vertically = self.get_parameter("flip_vertically").value
+        self.declare_parameter("rotation_angle", "0.0")
+        self.rotation_angle = float(self.get_parameter("rotation_angle").value)
 
         self.declare_parameter("frames.camera_link", "parking_camera_link")
         self.camera_link = self.get_parameter("frames.camera_link").value
@@ -137,19 +134,9 @@ class AVNode(Node):
             self.get_logger().info("[AV Camera] No Image Returned")
             return
         
-        angle = 0.0
-        if self.flip_horizontally and not self.flip_vertically:
-            angle = 90.0
-
-        if self.flip_vertically and not self.flip_horizontally:
-            angle = 180.0
-        
-        if self.flip_vertically and self.flip_horizontally:
-            angle = 270.0
-        
-        if angle != 0.0:
+        if self.rotation_angle != 0.0:
             image_center = tuple(np.array(self.frame.shape[1::-1]) / 2)
-            rot_mat = cv.getRotationMatrix2D(image_center, angle, 1.0)
+            rot_mat = cv.getRotationMatrix2D(image_center, self.rotation_angle, 1.0)
             self.frame = cv.warpAffine(self.frame, rot_mat, self.frame.shape[1::-1], flags=cv.INTER_LINEAR)
 
         self.image_message = self.bridge.cv2_to_imgmsg(self.frame, encoding="mono8")
