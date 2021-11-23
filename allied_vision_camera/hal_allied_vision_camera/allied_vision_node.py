@@ -44,6 +44,9 @@ class AVNode(Node):
         self.declare_parameter("rotation_angle", "0.0")
         self.rotation_angle = float(self.get_parameter("rotation_angle").value)
 
+        self.declare_parameter("color_image", "False")
+        self.use_color_image = float(self.get_parameter("color_image").value)
+
         self.declare_parameter("frames.camera_link", "parking_camera_link")
         self.camera_link = self.get_parameter("frames.camera_link").value
 
@@ -139,7 +142,10 @@ class AVNode(Node):
             rot_mat = cv.getRotationMatrix2D(image_center, self.rotation_angle, 1.0)
             self.frame = cv.warpAffine(self.frame, rot_mat, self.frame.shape[1::-1], flags=cv.INTER_LINEAR)
 
-        self.image_message = self.bridge.cv2_to_imgmsg(self.frame, encoding="mono8")
+        if self.use_color_image:
+            self.image_message = self.bridge.cv2_to_imgmsg(self.frame, encoding="bgr8")
+        else:
+            self.image_message = self.bridge.cv2_to_imgmsg(self.frame, encoding="mono8")
         self.image_message.header = Header()
         self.image_message.header.stamp = self.get_clock().now().to_msg()
         self.image_message.header.frame_id = self.camera_link

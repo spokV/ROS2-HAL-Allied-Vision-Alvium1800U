@@ -10,3 +10,5 @@ av_node:
       camera_link: wac_camera_link
       
     rotation_angle: 0.0
+
+    color_image: False
