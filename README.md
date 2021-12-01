@@ -24,6 +24,7 @@ Node to calibrate the camera (Opencv2)
 
 ## Depend
 
-ROS2
-pymba
-opencv
+- ROS2
+- Vimba 5_0
+- pymba
+- opencv-python
