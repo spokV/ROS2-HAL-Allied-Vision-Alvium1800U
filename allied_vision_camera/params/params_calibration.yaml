@@ -3,6 +3,7 @@ calibration_node:
 
     number_of_images_to_calibrate: 120
     board_dim: [8, 6]
+    square_size: 28.0 # mm
 
     subscribers:
       camera: /camera/raw_frame

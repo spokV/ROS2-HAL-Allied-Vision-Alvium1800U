@@ -1,6 +1,3 @@
-# Request: enable/disable the service
-# Response: the service state
-
 bool command_state
 ---
 bool cam_state

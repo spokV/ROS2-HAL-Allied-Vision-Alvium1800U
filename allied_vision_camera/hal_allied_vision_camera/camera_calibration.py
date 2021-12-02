@@ -11,21 +11,14 @@ import cv2
 import numpy as np
 import os
 import json
-import time
 from time import sleep
 import threading
 from ament_index_python.packages import get_package_share_directory
 
-package_share_directory = get_package_share_directory('hal_allied_vision_camera')
-# Path to store the calibration file
-CALIB_PATH = package_share_directory + "/calibration/"
 CALIB_FILE = "calib_params.json"
 
 CRITERIA = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-SQUARE_SIZE = 28.0 # mm
 
-
-# Class definition of the calibration function
 class CalibrationNode(Node):
     def __init__(self):
         super().__init__("calibration_node")
@@ -37,6 +30,9 @@ class CalibrationNode(Node):
 
         self.declare_parameter("board_dim", [6, 8])
         self.board_dim = self.get_parameter("board_dim").value
+
+        self.declare_parameter("square_size", "28.0")
+        self.square_size = float(self.get_parameter("square_size").value)
 
         self.declare_parameter("subscribers.camera", "/camera/raw_frame")
         self.camera_topic = self.get_parameter("subscribers.camera").value
@@ -50,8 +46,12 @@ class CalibrationNode(Node):
         self.declare_parameter("calibration_path", "auto")
         self.calibration_path = self.get_parameter("calibration_path").value
 
+        package_share_directory = get_package_share_directory('hal_allied_vision_camera')
+
         if self.calibration_path != "auto":
-            CALIB_PATH = self.calibration_path
+            self.calib_path = self.calibration_path
+        else:
+            self.calib_path = package_share_directory + "/calibration/"
         
         # Class attributes
         self.bridge = CvBridge()
@@ -61,21 +61,17 @@ class CalibrationNode(Node):
 
         self.stop_acquisition = False
 
-        # Subscription from camera stream
         self.frame_sub = self.create_subscription(Image, self.camera_topic, self.callback_frame, 1)
 
-        # Start calibration
         self.thread1 = threading.Thread(target=self.calib_process, daemon=True)
         self.thread1.start()
 
 
-
     # Calibration process
     def calib_process(self):
-        # Check if the calibration file already exists and ask for overwriting
-        if os.path.exists(CALIB_PATH+CALIB_FILE):
+        if os.path.exists(self.calib_path+CALIB_FILE):
             self.get_logger().info(CALIB_FILE + " already exists. Overwrite")
-            os.remove(CALIB_PATH+CALIB_FILE)
+            os.remove(self.calib_path+CALIB_FILE)
 
             while len(self.current_frame) == 0:
                 self.get_logger().warn("Waiting for the first frame acquisition...")
@@ -90,15 +86,10 @@ class CalibrationNode(Node):
             self.calibrate_cam()
 
 
-    # This function is a callback for the frame acqusiition
     def callback_frame(self, msg):
-
-        # Save the current frame in a class attribute
         self.current_frame = self.bridge.imgmsg_to_cv2(msg)
         
 
-
-    # This function let the user save 15 pics of a checkerboard
     def take_calib_pics(self):
 
         if not self.auto_capture:
@@ -107,7 +98,6 @@ class CalibrationNode(Node):
             self.get_logger().info("\nAuto-Capture - Taking 1 Frame each {0} sec \n\n".format(self.time_for_frame))
             self.timer = self.create_timer(self.time_for_frame, self.update_frames) # 50 Hz
 
-        
         while True:
             cv2.imshow("LiveCamera", self.current_frame)
             key = cv2.waitKey(1)
@@ -119,6 +109,7 @@ class CalibrationNode(Node):
                 self.update_frames()
             if self.stop_acquisition:
                 return True
+
 
     def update_frames(self):
 
@@ -134,10 +125,9 @@ class CalibrationNode(Node):
                 self.stop_acquisition = True
                 return True
 
-    # This functions drives the user to the camera calibration process
+
     def calibrate_cam(self):
 
-        # At first, ask the user to take 15 pictures
         is_done = self.take_calib_pics()
 
         if not is_done:
@@ -149,7 +139,7 @@ class CalibrationNode(Node):
         # Calibration process using the taken pictures.
         # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
         objp = np.zeros((self.board_dim[0] * self.board_dim[1], 3), np.float32)
-        objp[:, :2] = SQUARE_SIZE * np.mgrid[0:self.board_dim[1], 0:self.board_dim[0]].T.reshape(-1, 2)
+        objp[:, :2] = self.square_size * np.mgrid[0:self.board_dim[1], 0:self.board_dim[0]].T.reshape(-1, 2)
 
         # Arrays to store object points and image points from all the images.
         objpoints = [] # 3d point in real world space
@@ -175,9 +165,9 @@ class CalibrationNode(Node):
 
                 self.count_images = self.count_images + 1
         
-        self.get_logger().info("count_images: {0}".format(self.count_images))
+        self.get_logger().info("Number of Valid Images: {0}".format(self.count_images))
 
-        self.get_logger().info("Obtaining calibration parameters")
+        self.get_logger().info("Obtaining Calibration Parameters")
 
         # Obtain calibration parameters
         ret, self.calib_params["mtx"], self.calib_params["dist"], rvecs, tvecs = cv2.calibrateCamera(objpoints, \
@@ -192,16 +182,13 @@ class CalibrationNode(Node):
 
         self.get_logger().info("mean error: " + str(tot_error/len(objpoints)) + "pixels" + "\n")
 
-        # Adjust parameters to be serializable for JSON 
         self.calib_params["mtx"] = [self.calib_params["mtx"].flatten()[i] for i in range(9)]
         self.calib_params["dist"] = [self.calib_params["dist"].flatten()[i] for i in range(5)]
 
-        # Write on the calibration params file	
-        with open(CALIB_PATH+CALIB_FILE, "w") as outfile:
+        with open(self.calib_path+CALIB_FILE, "w") as outfile:
             json.dump(self.calib_params, outfile)
 
-        self.get_logger().info("Calibration has been completed successfully.\nCalibration path: " + CALIB_PATH + CALIB_FILE)
-        
+        self.get_logger().info("Calibration has been completed successfully.\nCalibration path: " + self.calib_path + CALIB_FILE)
 
 
 # Main loop function

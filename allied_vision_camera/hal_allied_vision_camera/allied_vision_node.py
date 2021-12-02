@@ -20,31 +20,28 @@ from scipy.spatial.transform import Rotation as R
 # Class definition of the calibration function
 class AVNode(Node):
     def __init__(self):
-        super().__init__("av_camera_node")
+        super().__init__("av_node")
         
-        # Parameters declaration
-        self.declare_parameter("cam_id", 1)
+        self.declare_parameter("cam_id", 0)
 
-        # Class attributes
         self.cam_id = self.get_parameter("cam_id").value
         self.bridge = CvBridge()
         self.frame = []
         self.start_acquisition = True
 
-        # Acquisition thread
         self.thread1 = threading.Thread(target=self.get_frame, daemon=True)
         self.thread1.start()
 
-        self.declare_parameter("publishers.raw_frame", "/parking_camera/raw_frame")
+        self.declare_parameter("publishers.raw_frame", "/camera/raw_frame")
         self.raw_frame_topic = self.get_parameter("publishers.raw_frame").value
 
-        self.declare_parameter("services.stop_camera", "/parking_camera/stop_camera")
+        self.declare_parameter("services.stop_camera", "/camera/stop_camera")
         self.stop_cam_service = self.get_parameter("services.stop_camera").value
 
         self.declare_parameter("rotation_angle", "0.0")
         self.rotation_angle = float(self.get_parameter("rotation_angle").value)
 
-        self.declare_parameter("frames.camera_link", "parking_camera_link")
+        self.declare_parameter("frames.camera_link", "camera_link")
         self.camera_link = self.get_parameter("frames.camera_link").value
 
         # Publishers
@@ -159,6 +156,7 @@ def main(args=None):
         node.exit()
     except BaseException:
         node.get_logger().info('[AV Camera] Exception:', file=sys.stderr)
+        node.exit()
         raise
     finally:
         rclpy.shutdown() 
