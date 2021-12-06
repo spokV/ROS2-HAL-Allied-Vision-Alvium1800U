@@ -52,7 +52,6 @@ class AVNode(Node):
         self.get_logger().info("[AV Camera] Node Ready")
 
 
-    # This function stops/enable the acquisition stream
     def acquisition_service(self, request, response):
         self.start_acquisition = request.command_state
         response.cam_state = self.start_acquisition
@@ -116,15 +115,12 @@ class AVNode(Node):
                     self.cam_obj.disarm()
                     self.cam_obj.close()
 
-                
-    # This function stops/enable the acquisition stream
+
     def exit(self):
         self.start_acquisition = False
         self.thread1.join()
 
 
-
-    # Publisher function
     def publish_frame(self):
         
         if len(self.frame) == 0:
