@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 
 # Libraries
-import rclpy
-from rclpy.node import Node
-from pymba import *
-from sensor_msgs.msg import Image
-from allied_vision_camera_interfaces.srv import CameraState
-from cv_bridge import CvBridge
 import threading
 import sys
-import math
-
 import numpy as np
 import cv2 as cv
+from pymba import *
 
+import rclpy
+from rclpy.node import Node
+
+from sensor_msgs.msg import Image
 from std_msgs.msg import Header
-from scipy.spatial.transform import Rotation as R
+
+from cv_bridge import CvBridge
+
+from allied_vision_camera_interfaces.srv import CameraState
 
 # Class definition of the calibration function
 class AVNode(Node):
@@ -73,27 +73,6 @@ class AVNode(Node):
                 # read a feature value
                 feature = self.cam_obj.feature('ExposureAuto')
                 feature.value = 'Continuous'
-
-                '''
-                # get feature value via feature object
-                for feature_name in self.cam_obj.feature_names():
-                    feature = self.cam_obj.feature(feature_name)
-
-                    try:
-                        value = feature.value
-                        range_ = feature.range
-
-                    except VimbaException as e:
-                        value = e
-                        range_ = None
-
-                    print('\n\t'.join(
-                        str(x) for x in (
-                            feature_name,
-                            'value: {}'.format(value),
-                            'range: {}'.format(range_))
-                        if x is not None))
-                '''
 
             except:
                 self.get_logger().info("[AV Camera] No AlliedVision Alvium cameras found, check connection.")

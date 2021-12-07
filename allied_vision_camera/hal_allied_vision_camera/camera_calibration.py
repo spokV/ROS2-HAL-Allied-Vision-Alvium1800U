@@ -67,23 +67,16 @@ class CalibrationNode(Node):
         self.thread1.start()
 
 
-    # Calibration process
     def calib_process(self):
         if os.path.exists(self.calib_path+CALIB_FILE):
             self.get_logger().info(CALIB_FILE + " already exists. Overwrite")
             os.remove(self.calib_path+CALIB_FILE)
 
-            while len(self.current_frame) == 0:
-                self.get_logger().warn("Waiting for the first frame acquisition...")
-                sleep(1)
+        while len(self.current_frame) == 0:
+            self.get_logger().warn("Waiting for the first frame acquisition...")
+            sleep(1)
 
-            self.calibrate_cam()
-        else:
-            while len(self.current_frame) == 0:
-                self.get_logger().warn("Waiting for the first frame acquisition...")
-                sleep(1)
-
-            self.calibrate_cam()
+        self.calibrate_cam()
 
 
     def callback_frame(self, msg):
@@ -136,14 +129,11 @@ class CalibrationNode(Node):
 
         self.get_logger().info("Calibration process started")
 
-        # Calibration process using the taken pictures.
-        # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
         objp = np.zeros((self.board_dim[0] * self.board_dim[1], 3), np.float32)
         objp[:, :2] = self.square_size * np.mgrid[0:self.board_dim[1], 0:self.board_dim[0]].T.reshape(-1, 2)
 
-        # Arrays to store object points and image points from all the images.
-        objpoints = [] # 3d point in real world space
-        imgpoints = [] # 2d points in image plane.
+        objpoints = [] 
+        imgpoints = []
 
         self.count_images = 0
         for frame in self.calib_pics:
@@ -203,8 +193,6 @@ def main(args=None):
         node.get_logger().info('Exception in Calibration Node:', file=sys.stderr)
         raise
     finally:
-        # Destroy the node explicitly
-        # (optional - Done automatically when node is garbage collected)
         rclpy.shutdown() 
 
 

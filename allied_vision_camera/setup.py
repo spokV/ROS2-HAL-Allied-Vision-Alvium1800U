@@ -26,7 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
         "calibration_node = hal_allied_vision_camera.camera_calibration:main",
-        "av_node = hal_allied_vision_camera.allied_vision_node:main"
+        "av_node = hal_allied_vision_camera.av_node:main"
         ],
     },
 )

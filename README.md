@@ -6,6 +6,7 @@ HAL for AlliedVision Alvium Camera ROS2 Package.
 
 ROS2 Package to interface to the AV Camera.
 The package is splitted in core and interfaces.
+The package depends on AlliedVision SDK, Vimba 5_0 (https://www.alliedvision.com/en/products/software/#c1500) and the python wrapper, pymba (`git clone https://github.com/morefigs/pymba.git`). 
 
 ## Input/Output
 
@@ -20,7 +21,7 @@ Output:
 
 ## Calibration
 
-Node to calibrate the camera (Opencv2)
+Node to calibrate the camera (OpenCv2).
 
 ## Depend
 
