@@ -114,22 +114,22 @@ class AVNode(Node):
     # This function save the current frame in a class attribute
     def get_frame(self):
 
-        self.camera_name = "DEV_1AB22C00BBE6"
-
         with Vimba.get_instance():
-            self.get_camera(self.camera_name)
+            if self.get_camera(self.camera_name):
 
-            with self.cam:
-                self.setup_camera()
-                
-                self.get_logger().info("[AV Camera] Frame acquisition has started.")
-                
-                while self.start_acquisition:
-                    for current_frame in self.cam.get_frame_generator(limit=10, timeout_ms=3000):
-                        print(current_frame)
-                        if current_frame.get_status() == FrameStatus.Complete:
-                            self.frame = current_frame.as_opencv_image()
-                            self.publish_frame()
+                with self.cam:
+                    self.setup_camera()
+                    
+                    self.get_logger().info("[AV Camera] Frame acquisition has started.")
+                    
+                    while self.start_acquisition:
+                        for current_frame in self.cam.get_frame_generator(limit=10, timeout_ms=3000):
+                            print(current_frame)
+                            if current_frame.get_status() == FrameStatus.Complete:
+                                self.frame = current_frame.as_opencv_image()
+                                self.publish_frame()
+            else:
+                self.get_logger().info("[AV Camera] No AV Camera Found. Check Connection.")
 
 
 
