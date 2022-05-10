@@ -5,6 +5,7 @@ import threading
 import sys
 import numpy as np
 import cv2 as cv
+from pymba import *
 
 import rclpy
 from rclpy.node import Node
@@ -15,14 +16,6 @@ from std_msgs.msg import Header
 from cv_bridge import CvBridge
 
 from allied_vision_camera_interfaces.srv import CameraState
-from vimba import *
-
-def print_camera(cam: Camera):
-    print('/// Camera Name   : {}'.format(cam.get_name()))
-    print('/// Model Name    : {}'.format(cam.get_model()))
-    print('/// Camera ID     : {}'.format(cam.get_id()))
-    print('/// Serial Number : {}'.format(cam.get_serial()))
-    print('/// Interface ID  : {}\n'.format(cam.get_interface_id()))
 
 # Class definition of the calibration function
 class AVNode(Node):
@@ -58,14 +51,6 @@ class AVNode(Node):
         self.stop_service = self.create_service(CameraState, self.stop_cam_service, self.acquisition_service)
         self.get_logger().info("[AV Camera] Node Ready")
 
-        with Vimba.get_instance() as vimba:
-            cams = vimba.get_all_cameras()
-
-            print('Cameras found: {}'.format(len(cams)))
-
-            for cam in cams:
-                print_camera(cam)
-
 
     def acquisition_service(self, request, response):
         self.start_acquisition = request.command_state
@@ -73,64 +58,63 @@ class AVNode(Node):
         return response
 
 
-    def get_camera(self, camera_id):
-        with Vimba.get_instance() as vimba:
-            if camera_id == "auto":
-                self.get_logger().info('Access First Camera Available')
-                cams = vimba.get_all_cameras()
-                if not cams:
-                    self.get_logger().info('No Cameras accessible. Abort.')
-                    return False
-
-                self.cam = cams[0]
-
-
-            else:
-                self.get_logger().info('Access Camera {0}'.format(camera_id))
-                try:
-                    self.cam = vimba.get_camera_by_id(camera_id)
-
-                except VimbaCameraError:
-                    self.get_logger().info('Failed to access Camera \'{}\'. Abort.'.format(camera_id))
-                    return False
-
-        return True
-
-
-    def setup_camera(self):
-        with self.cam:
-            # Try to adjust GeV packet size. This Feature is only available for GigE - Cameras.
-            try:
-                self.cam.GVSPAdjustPacketSize.run()
-
-                while not self.cam.GVSPAdjustPacketSize.is_done():
-                    pass
-
-            except (AttributeError, VimbaFeatureError):
-                pass
-
-
-
     # This function save the current frame in a class attribute
     def get_frame(self):
 
-        self.camera_name = "DEV_1AB22C00BBE6"
+        with Vimba() as vimba:
 
-        with Vimba.get_instance():
-            self.get_camera(self.camera_name)
+            cam_found = True
 
-            with self.cam:
-                self.setup_camera()
+            try:
+                self.get_logger().info("Available Cameras: {0}".format(vimba.camera_ids()))
                 
-                self.get_logger().info("[AV Camera] Frame acquisition has started.")
-                
-                while self.start_acquisition:
-                    for current_frame in self.cam.get_frame_generator(limit=10, timeout_ms=3000):
-                        print(current_frame)
-                        if current_frame.get_status() == FrameStatus.Complete:
-                            self.frame = current_frame.as_opencv_image()
-                            self.publish_frame()
+                # Open the cam and set the mode
+                if self.camera_name == "auto":
+                    self.get_logger().info("Opening First Camera Available")
+                    self.cam_obj = vimba.camera(0)
+                else:
 
+                    cam_id = 0
+                    cam_count = len(vimba.camera_ids())
+                    for cam_name_id in vimba.camera_ids():
+                        if cam_name_id == self.camera_name:
+                            self.cam_obj = vimba.camera(cam_id)
+                            break
+                        cam_id = cam_id + 1
+
+                    if cam_id >= cam_count:
+                        self.get_logger().info("Camera with name {0} not found".format(self.camera_name))
+
+                self.cam_obj.open()
+
+
+                for feature_name in self.cam_obj.feature_names():
+                    feature = self.cam_obj.feature(feature_name)
+                    #print(feature.info)
+
+                # read a feature value
+                feature = self.cam_obj.feature('ExposureAuto')
+                feature.value = 'Continuous'
+
+            except:
+                self.get_logger().info("[AV Camera] No AlliedVision Alvium cameras found, check connection.")
+                cam_found = False
+
+            if cam_found:
+                try:
+                    self.cam_obj.arm("SingleFrame")
+                    self.get_logger().info("[AV Camera] Frame acquisition has started.")
+                    
+                    while self.start_acquisition:
+                        current_frame = self.cam_obj.acquire_frame()
+                        self.frame = current_frame.buffer_data_numpy()
+                        self.publish_frame()
+
+                    self.cam_obj.disarm()
+                    self.cam_obj.close()
+                except:
+                    self.cam_obj.disarm()
+                    self.cam_obj.close()
 
 
     def exit(self):

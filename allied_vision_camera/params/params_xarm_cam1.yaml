@@ -1,0 +1,15 @@
+av_node:
+  ros__parameters:
+
+    camera_name: DEV_1AB22C00BBE6
+
+    publishers:
+      raw_frame: /arm_camera/raw_frame
+
+    services:
+      stop_camera: /arm_camera/get_cam_state
+
+    frames: 
+      camera_link: wrist_camera_link
+      
+    rotation_angle: 0.0

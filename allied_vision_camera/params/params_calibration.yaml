@@ -1,9 +1,9 @@
 calibration_node:
   ros__parameters:
 
-    number_of_images_to_calibrate: 120
-    board_dim: [8, 6]
-    square_size: 28.0 # mm
+    number_of_images_to_calibrate: 35
+    board_dim: [5, 7]
+    square_size: 22.0 # mm
 
     subscribers:
       camera: /camera/raw_frame
@@ -13,4 +13,4 @@ calibration_node:
       time_for_frame: 1.0   # sec
     
     #calibration_path: auto  # Specify absolute path instead
-    calibration_path: /home/marco/pasqua_devel/src/HAL_AlliedVision_Alvium/allied_vision_camera/calibration/
+    calibration_path: /home/rvd/Desktop/xarm_dev/src/dependencies/ROS2-HAL-Allied-Vision-Alvium1800U/allied_vision_camera/calibration/

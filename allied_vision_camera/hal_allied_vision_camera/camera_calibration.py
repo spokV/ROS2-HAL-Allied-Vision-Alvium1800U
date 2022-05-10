@@ -175,7 +175,7 @@ class CalibrationNode(Node):
         self.calib_params["mtx"] = [self.calib_params["mtx"].flatten()[i] for i in range(9)]
         self.calib_params["dist"] = [self.calib_params["dist"].flatten()[i] for i in range(5)]
 
-        with open(self.calib_path+CALIB_FILE, "w") as outfile:
+        with open(self.calib_path+CALIB_FILE, "w+") as outfile:
             json.dump(self.calib_params, outfile)
 
         self.get_logger().info("Calibration has been completed successfully.\nCalibration path: " + self.calib_path + CALIB_FILE)
