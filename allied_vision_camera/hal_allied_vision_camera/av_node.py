@@ -114,7 +114,7 @@ class AVNode(Node):
     # This function save the current frame in a class attribute
     def get_frame(self):
 
-        self.camera_name = "DEV_1AB22C00BBE6"
+        self.camera_name = "DEV_1AB22C00BBE5"
 
         with Vimba.get_instance():
             self.get_camera(self.camera_name)
