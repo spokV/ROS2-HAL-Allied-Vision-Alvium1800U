@@ -72,6 +72,8 @@ class CalibrationNode(Node):
             self.get_logger().info(CALIB_FILE + " already exists. Overwrite")
             os.remove(self.calib_path+CALIB_FILE)
 
+        self.get_logger().info("Init Calibration Node...")
+        sleep(5)
         while len(self.current_frame) == 0:
             self.get_logger().warn("Waiting for the first frame acquisition...")
             sleep(1)
@@ -88,7 +90,7 @@ class CalibrationNode(Node):
         if not self.auto_capture:
             self.get_logger().info("\n======== KEYBOARD COMMANDS ========\n\nq - quit pictures acquisition\nc - capture actual frame\n\n")
         else:
-            self.get_logger().info("\nAuto-Capture - Taking 1 Frame each {0} sec \n\n".format(self.time_for_frame))
+            self.get_logger().info("\nAuto-Capture - Taking 1 Frame every {0} secs \n\n".format(self.time_for_frame))
             self.timer = self.create_timer(self.time_for_frame, self.update_frames) # 50 Hz
 
         while True:

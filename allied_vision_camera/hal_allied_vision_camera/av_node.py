@@ -17,12 +17,6 @@ from cv_bridge import CvBridge
 from allied_vision_camera_interfaces.srv import CameraState
 from vimba import *
 
-def print_camera(cam: Camera):
-    print('/// Camera Name   : {}'.format(cam.get_name()))
-    print('/// Model Name    : {}'.format(cam.get_model()))
-    print('/// Camera ID     : {}'.format(cam.get_id()))
-    print('/// Serial Number : {}'.format(cam.get_serial()))
-    print('/// Interface ID  : {}\n'.format(cam.get_interface_id()))
 
 # Class definition of the calibration function
 class AVNode(Node):
@@ -51,6 +45,21 @@ class AVNode(Node):
         self.declare_parameter("frames.camera_link", "camera_link")
         self.camera_link = self.get_parameter("frames.camera_link").value
 
+
+        self.declare_parameter("width", "auto")
+        self.width = self.get_parameter("width").value
+        self.declare_parameter("height", "auto")
+        self.height = self.get_parameter("height").value
+
+        if self.width != "auto" and self.height != "auto":
+            self.resize_image = True
+            width = int(self.width)
+            height = int(self.height)
+            self.resized_dim = (width, height)
+            self.get_logger().info("[AV Camera] Resize required with dimensions: {0}".format(self.resized_dim))
+        else:
+            self.resize_image = False
+
         # Publishers
         self.frame_pub = self.create_publisher(Image, self.raw_frame_topic, 1)
 
@@ -58,13 +67,13 @@ class AVNode(Node):
         self.stop_service = self.create_service(CameraState, self.stop_cam_service, self.acquisition_service)
         self.get_logger().info("[AV Camera] Node Ready")
 
-        with Vimba.get_instance() as vimba:
-            cams = vimba.get_all_cameras()
 
-            print('Cameras found: {}'.format(len(cams)))
-
-            for cam in cams:
-                print_camera(cam)
+    def print_camera(self, cam: Camera):
+        self.get_logger().info('/// Camera Name   : {}'.format(cam.get_name()))
+        self.get_logger().info('/// Model Name    : {}'.format(cam.get_model()))
+        self.get_logger().info('/// Camera ID     : {}'.format(cam.get_id()))
+        self.get_logger().info('/// Serial Number : {}'.format(cam.get_serial()))
+        self.get_logger().info('/// Interface ID  : {}\n'.format(cam.get_interface_id()))
 
 
     def acquisition_service(self, request, response):
@@ -123,11 +132,13 @@ class AVNode(Node):
                     self.get_logger().info("[AV Camera] Frame acquisition has started.")
                     
                     while self.start_acquisition:
-                        for current_frame in self.cam.get_frame_generator(limit=10, timeout_ms=3000):
-                            print(current_frame)
+                        for current_frame in self.cam.get_frame_generator(limit=1, timeout_ms=3000):
+                            
                             if current_frame.get_status() == FrameStatus.Complete:
                                 self.frame = current_frame.as_opencv_image()
                                 self.publish_frame()
+                            else:
+                                self.get_logger().info("Frame Incomplete")
             else:
                 self.get_logger().info("[AV Camera] No AV Camera Found. Check Connection.")
 
@@ -143,6 +154,9 @@ class AVNode(Node):
         if len(self.frame) == 0:
             self.get_logger().info("[AV Camera] No Image Returned")
             return
+
+        if self.resize_image:
+            self.frame = cv.resize(self.frame, self.resized_dim, interpolation = cv.INTER_AREA)
         
         if self.rotation_angle != 0.0:
             image_center = tuple(np.array(self.frame.shape[1::-1]) / 2)
