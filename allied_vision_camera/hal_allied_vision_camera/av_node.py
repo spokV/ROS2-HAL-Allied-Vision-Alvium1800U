@@ -51,6 +51,10 @@ class AVNode(Node):
         self.declare_parameter("height", "auto")
         self.height = self.get_parameter("height").value
 
+        self.declare_parameter("squared_image", "False")
+        self.is_squared_image = self.get_parameter("squared_image").value
+        
+
         if self.width != "auto" and self.height != "auto":
             self.resize_image = True
             width = int(self.width)
@@ -156,7 +160,19 @@ class AVNode(Node):
             return
 
         if self.resize_image:
-            self.frame = cv.resize(self.frame, self.resized_dim, interpolation = cv.INTER_AREA)
+            height, width, channel = self.frame.shape
+
+            if self.is_squared_image:
+                if height <= width:
+                    delta_width = int((width - height) / 2.0)
+                    squared_frame = self.frame[:, delta_width:width-delta_width]
+                else:
+                    delta_height = int((height - width) / 2.0)
+                    squared_frame = self.frame[delta_height:height-delta_height, :]
+
+                self.frame = cv.resize(squared_frame, self.resized_dim, interpolation = cv.INTER_AREA)
+            else:   
+                self.frame = cv.resize(self.frame, self.resized_dim, interpolation = cv.INTER_AREA)
         
         if self.rotation_angle != 0.0:
             image_center = tuple(np.array(self.frame.shape[1::-1]) / 2)
