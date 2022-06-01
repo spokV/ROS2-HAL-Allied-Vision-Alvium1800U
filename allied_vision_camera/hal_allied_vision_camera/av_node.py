@@ -45,8 +45,11 @@ class AVNode(Node):
         self.declare_parameter("frames.camera_link", "camera_link")
         self.camera_link = self.get_parameter("frames.camera_link").value
 
-        self.declare_parameter("resize_image", "False")
+        self.declare_parameter("resize_image", False)
         self.need_to_resize_image = self.get_parameter("resize_image").value
+
+        self.declare_parameter("crop_image", False)
+        self.need_to_crop_image = self.get_parameter("crop_image").value
 
         self.declare_parameter("auto_exposure", "Off")
         self.auto_exposure = self.get_parameter("auto_exposure").value
@@ -55,11 +58,21 @@ class AVNode(Node):
             self.get_logger().info("[AV Camera] Auto Exposure must be Off, Once or Continuous")
             self.auto_exposure = "Off"
 
+        if self.need_to_crop_image:
+            self.declare_parameter("cropped_width", 0)
+            self.cropped_width = self.get_parameter("cropped_width").value
+            self.declare_parameter("cropped_height", 0)
+            self.cropped_height = self.get_parameter("cropped_height").value
+
         if self.need_to_resize_image:
-            self.declare_parameter("new_width", "auto")
-            self.new_width = self.get_parameter("new_width").value
-            self.declare_parameter("new_height", "auto")
-            self.new_height = self.get_parameter("new_height").value
+            self.declare_parameter("resized_width", "auto")
+            self.resized_width = self.get_parameter("resized_width").value
+            self.declare_parameter("resized_height", "auto")
+            self.resized_height = self.get_parameter("resized_height").value
+            width = int(self.resized_width)
+            height = int(self.resized_height)
+            self.resized_dim = (width, height)
+            self.get_logger().info("[AV Camera] Resize required with dimensions: {0}".format(self.resized_dim))
 
         # Publishers
         self.frame_pub = self.create_publisher(Image, self.raw_frame_topic, 1)
@@ -181,15 +194,18 @@ class AVNode(Node):
             self.get_logger().info("[AV Camera] No Image Returned")
             return
 
-        if self.need_to_resize_image:
-            cur_height, cur_width, channel = self.frame.shape
+        if self.need_to_crop_image:
+            cur_height, cur_width, _ = self.frame.shape
 
-            delta_width = int((cur_width - self.new_width) / 2.0)
-            delta_height = int((cur_height - self.new_height) / 2.0)
+            self.get_logger().info("[AV Camera] Image Cropped. New shape: {0}".format(self.frame.shape))
+            delta_width = int((cur_width - self.cropped_width) / 2.0)
+            delta_height = int((cur_height - self.cropped_height) / 2.0)
 
             self.frame = self.frame[delta_height:(cur_height-delta_height), delta_width:(cur_width-delta_width)]
-            self.get_logger().info("[AV Camera] Image Reshaped. New shape: {0}".format(self.frame.shape))
+            self.get_logger().info("[AV Camera] Image Cropped. New shape: {0}".format(self.frame.shape))
         
+        if self.need_to_resize_image:
+            self.frame = cv.resize(self.frame, self.resized_dim, interpolation = cv.INTER_AREA)
 
         if self.rotation_angle != 0.0:
             image_center = tuple(np.array(self.frame.shape[1::-1]) / 2)
