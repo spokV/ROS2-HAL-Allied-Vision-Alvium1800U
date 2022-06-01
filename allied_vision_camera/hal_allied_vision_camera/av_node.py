@@ -45,24 +45,21 @@ class AVNode(Node):
         self.declare_parameter("frames.camera_link", "camera_link")
         self.camera_link = self.get_parameter("frames.camera_link").value
 
+        self.declare_parameter("resize_image", "False")
+        self.need_to_resize_image = self.get_parameter("resize_image").value
 
-        self.declare_parameter("width", "auto")
-        self.width = self.get_parameter("width").value
-        self.declare_parameter("height", "auto")
-        self.height = self.get_parameter("height").value
+        self.declare_parameter("auto_exposure", "Off")
+        self.auto_exposure = self.get_parameter("auto_exposure").value
 
-        self.declare_parameter("squared_image", "False")
-        self.is_squared_image = self.get_parameter("squared_image").value
-        
+        if self.auto_exposure not in ["Off", "Once", "Continuous"]:
+            self.get_logger().info("[AV Camera] Auto Exposure must be Off, Once or Continuous")
+            self.auto_exposure = "Off"
 
-        if self.width != "auto" and self.height != "auto":
-            self.resize_image = True
-            width = int(self.width)
-            height = int(self.height)
-            self.resized_dim = (width, height)
-            self.get_logger().info("[AV Camera] Resize required with dimensions: {0}".format(self.resized_dim))
-        else:
-            self.resize_image = False
+        if self.need_to_resize_image:
+            self.declare_parameter("new_width", "auto")
+            self.new_width = self.get_parameter("new_width").value
+            self.declare_parameter("new_height", "auto")
+            self.new_height = self.get_parameter("new_height").value
 
         # Publishers
         self.frame_pub = self.create_publisher(Image, self.raw_frame_topic, 1)
@@ -122,6 +119,26 @@ class AVNode(Node):
             except (AttributeError, VimbaFeatureError):
                 pass
 
+    
+    def print_feature(self, feature):
+        try:
+            value = feature.get()
+
+        except (AttributeError, VimbaFeatureError):
+            value = None
+
+        self.get_logger().info('/// Feature name   : {}'.format(feature.get_name()))
+        self.get_logger().info('/// Display name   : {}'.format(feature.get_display_name()))
+        self.get_logger().info('/// Tooltip        : {}'.format(feature.get_tooltip()))
+        self.get_logger().info('/// Description    : {}'.format(feature.get_description()))
+        self.get_logger().info('/// SFNC Namespace : {}'.format(feature.get_sfnc_namespace()))
+        self.get_logger().info('/// Unit           : {}'.format(feature.get_unit()))
+        self.get_logger().info('/// Value          : {}\n'.format(str(value)))
+
+    
+    def list_cam_features(self, camera):
+        for feature in camera.get_all_features():
+            self.print_feature(feature)
 
 
     # This function save the current frame in a class attribute
@@ -132,6 +149,11 @@ class AVNode(Node):
 
                 with self.cam:
                     self.setup_camera()
+
+                    self.cam.get_feature_by_name('ExposureAuto').set(self.auto_exposure)
+
+                    #### LIST FEATURES
+                    #self.list_cam_features(self.cam)
                     
                     self.get_logger().info("[AV Camera] Frame acquisition has started.")
                     
@@ -159,25 +181,21 @@ class AVNode(Node):
             self.get_logger().info("[AV Camera] No Image Returned")
             return
 
-        if self.resize_image:
-            height, width, channel = self.frame.shape
+        if self.need_to_resize_image:
+            cur_height, cur_width, channel = self.frame.shape
 
-            if self.is_squared_image:
-                if height <= width:
-                    delta_width = int((width - height) / 2.0)
-                    squared_frame = self.frame[:, delta_width:width-delta_width]
-                else:
-                    delta_height = int((height - width) / 2.0)
-                    squared_frame = self.frame[delta_height:height-delta_height, :]
+            delta_width = int((cur_width - self.new_width) / 2.0)
+            delta_height = int((cur_height - self.new_height) / 2.0)
 
-                self.frame = cv.resize(squared_frame, self.resized_dim, interpolation = cv.INTER_AREA)
-            else:   
-                self.frame = cv.resize(self.frame, self.resized_dim, interpolation = cv.INTER_AREA)
+            self.frame = self.frame[delta_height:(cur_height-delta_height), delta_width:(cur_width-delta_width)]
+            self.get_logger().info("[AV Camera] Image Reshaped. New shape: {0}".format(self.frame.shape))
         
+
         if self.rotation_angle != 0.0:
             image_center = tuple(np.array(self.frame.shape[1::-1]) / 2)
             rot_mat = cv.getRotationMatrix2D(image_center, self.rotation_angle, 1.0)
             self.frame = cv.warpAffine(self.frame, rot_mat, self.frame.shape[1::-1], flags=cv.INTER_LINEAR)
+
 
         self.image_message = self.bridge.cv2_to_imgmsg(self.frame, encoding="mono8")
         self.image_message.header = Header()
