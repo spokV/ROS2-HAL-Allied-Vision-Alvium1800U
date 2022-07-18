@@ -52,6 +52,9 @@ class CalibrationNode(Node):
             self.calib_path = self.calibration_path
         else:
             self.calib_path = package_share_directory + "/calibration/"
+
+        
+        self.get_logger().warn("Calibration Path:  {0}".format(self.calib_path))
         
         # Class attributes
         self.bridge = CvBridge()
@@ -173,12 +176,21 @@ class CalibrationNode(Node):
             tot_error += error
 
         self.get_logger().info("mean error: " + str(tot_error/len(objpoints)) + "pixels" + "\n")
+        
+        if os.path.exists(self.calib_path + CALIB_FILE):
+            os.remove(self.calib_path + CALIB_FILE)
 
-        self.calib_params["mtx"] = [self.calib_params["mtx"].flatten()[i] for i in range(9)]
-        self.calib_params["dist"] = [self.calib_params["dist"].flatten()[i] for i in range(5)]
+        try:
+            cv_file = cv2.FileStorage(self.calib_path + CALIB_FILE, cv2.FILE_STORAGE_WRITE)
 
-        with open(self.calib_path+CALIB_FILE, "w+") as outfile:
-            json.dump(self.calib_params, outfile)
+            cv_file.write('mtx', self.calib_params["mtx"])
+            cv_file.write('dist', self.calib_params["dist"])
+
+            cv_file.release()
+
+        except FileNotFoundError:
+            raise FileNotFoundError(f"The {self.calib_path + CALIB_FILE} directory does not exist")
+
 
         self.get_logger().info("Calibration has been completed successfully.\nCalibration path: " + self.calib_path + CALIB_FILE)
 
