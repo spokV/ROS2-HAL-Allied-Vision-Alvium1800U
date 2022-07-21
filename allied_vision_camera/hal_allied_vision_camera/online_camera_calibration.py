@@ -98,7 +98,7 @@ class CalibrationNode(Node):
 
         while True:
             cv2.imshow("LiveCamera", self.current_frame)
-            key = cv2.waitKey(1)
+            key = cv2.waitKey(500)
 
             if key == ord("q"):
                 self.get_logger().info("Calibration process has been stopped.")
@@ -175,7 +175,7 @@ class CalibrationNode(Node):
             error = cv2.norm(imgpoints[i],imgpoints2, cv2.NORM_L2) / len(imgpoints2)
             tot_error += error
 
-        self.get_logger().info("mean error: " + str(tot_error/len(objpoints)) + "pixels" + "\n")
+        self.get_logger().info("mean error: " + str(tot_error/len(objpoints)) + " pixels" + "\n")
         
         if os.path.exists(self.calib_path + CALIB_FILE):
             os.remove(self.calib_path + CALIB_FILE)

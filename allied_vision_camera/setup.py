@@ -25,9 +25,15 @@ setup(
     license='BSD',
     entry_points={
         'console_scripts': [
-        "calibration_node = hal_allied_vision_camera.camera_calibration:main",
+        "online_camera_calibration = hal_allied_vision_camera.online_camera_calibration:main",
+        "offline_camera_calibration = hal_allied_vision_camera.offline_camera_calibration_node:main",
+
         "av_node = hal_allied_vision_camera.av_node:main",
-        "av_node_pymba = hal_allied_vision_camera.av_node_pymba:main"
+        "av_node_pymba = hal_allied_vision_camera.av_node_pymba:main",
+        
+        "camera_acquisition = hal_allied_vision_camera.camera_acquisition_node:main",
+
+        
         
         ],
     },

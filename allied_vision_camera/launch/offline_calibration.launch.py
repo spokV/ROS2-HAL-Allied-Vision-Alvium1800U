@@ -14,29 +14,17 @@ from launch.actions.execute_process import ExecuteProcess
 
 def generate_launch_description():
 
-    params = os.path.join(get_package_share_directory("hal_allied_vision_camera"), 'params', 'params_calibration.yaml')
-    params_av_node = os.path.join(get_package_share_directory("hal_allied_vision_camera"), 'params', 'params_camera_for_calibration.yaml')
-    
+    params = os.path.join(get_package_share_directory("hal_allied_vision_camera"), 'params', 'params_offline_calibration.yaml')
+
     return LaunchDescription([
         Node(
             package='hal_allied_vision_camera',
-            executable='calibration_node',
-            name='calibration_node',
+            executable='offline_camera_calibration',
+            name='offline_camera_calibration',
             output={
                     "stdout": "screen",
                     "stderr": "screen",
             },
             parameters=[params],
         ),
-
-        Node(
-            package='hal_allied_vision_camera',
-            executable='av_node',
-            name='av_node',
-            output={
-                    "stdout": "screen",
-                    "stderr": "screen",
-            },
-            parameters=[params_av_node],
-        )
 ])

@@ -1,8 +1,8 @@
-calibration_node:
+online_camera_calibration:
   ros__parameters:
 
     number_of_images_to_calibrate: 100
-    board_dim: [5, 7]
+    board_dim: [7, 5]
     square_size: 22.0 # mm
 
     subscribers:
