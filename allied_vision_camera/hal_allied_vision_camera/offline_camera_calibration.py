@@ -35,7 +35,7 @@ class CameraCalibration:
         **kwargs,
     ) -> Dict[str, Any]:
 
-        display: bool = kwargs.get("display", False)
+        display: bool = kwargs.get("display", True)
         criteria: Any = kwargs.get(
             "criteria", (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
         )
