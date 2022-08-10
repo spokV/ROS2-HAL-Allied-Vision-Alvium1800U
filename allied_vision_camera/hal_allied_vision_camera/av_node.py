@@ -14,7 +14,7 @@ from std_msgs.msg import Header
 
 from cv_bridge import CvBridge
 
-from allied_vision_camera_interfaces.srv import CameraState
+from allied_vision_camera_interfaces.srv import CommandCamera
 from vimba import *
 
 
@@ -78,7 +78,7 @@ class AVNode(Node):
         self.frame_pub = self.create_publisher(Image, self.raw_frame_topic, 1)
 
         # Service: stop acquisition
-        self.stop_service = self.create_service(CameraState, self.stop_cam_service, self.acquisition_service)
+        self.stop_service = self.create_service(CommandCamera, self.stop_cam_service, self.acquisition_service)
         self.get_logger().info("[AV Camera] Node Ready")
 
 
