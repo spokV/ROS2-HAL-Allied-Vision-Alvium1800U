@@ -160,7 +160,7 @@ class CameraAcquisition(Node):
             self.get_logger().info("Error writing image.")
 
 
-# Main loop function
+##### Main Function #####
 def main(args=None):
 
     rclpy.init(args=args)
@@ -178,6 +178,5 @@ def main(args=None):
         rclpy.shutdown()
 
 
-# Main
 if __name__ == "__main__":
     main()

@@ -196,7 +196,7 @@ class CalibrationNode(Node):
         self.get_logger().info("Calibration has been completed successfully.\nCalibration path: " + self.calib_path + CALIB_FILE)
 
 
-# Main loop function
+##### Main Function #####
 def main(args=None):
     rclpy.init(args=args)
     node = CalibrationNode()
@@ -211,6 +211,5 @@ def main(args=None):
         rclpy.shutdown() 
 
 
-# Main
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

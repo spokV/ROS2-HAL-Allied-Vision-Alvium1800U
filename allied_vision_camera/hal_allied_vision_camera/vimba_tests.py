@@ -108,5 +108,5 @@ def main():
                 print('Got {}'.format(frame), flush=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
