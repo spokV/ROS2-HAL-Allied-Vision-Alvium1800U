@@ -46,33 +46,34 @@ class AVNode(Node):
         self.camera_link = self.get_parameter("frames.camera_link").value
 
         self.declare_parameter("resize.enable", False)
-        self.need_to_resize_image = self.get_parameter("resize_image").value
+        self.need_to_resize_image = self.get_parameter("resize.enable").value
 
         self.declare_parameter("crop.enable", False)
-        self.need_to_crop_image = self.get_parameter("crop_image").value
+        self.need_to_crop_image = self.get_parameter("crop.enable").value
 
         self.declare_parameter("auto_exposure", "Once")
         self.auto_exposure = self.get_parameter("auto_exposure").value
 
         if self.auto_exposure not in ["Off", "Once", "Continuous"]:
             self.get_logger().info("[AV Camera] Auto Exposure must be Off, Once or Continuous")
-            self.auto_exposure = "Off"
+            self.auto_exposure = "Once"
 
         if self.need_to_crop_image:
             self.declare_parameter("crop.cropped_width", 0)
-            self.cropped_width = self.get_parameter("cropped_width").value
+            self.cropped_width = self.get_parameter("crop.cropped_width").value
             self.declare_parameter("crop.cropped_height", 0)
-            self.cropped_height = self.get_parameter("cropped_height").value
+            self.cropped_height = self.get_parameter("crop.cropped_height").value
 
         if self.need_to_resize_image:
             self.declare_parameter("resize.resized_width", 0)
-            self.resized_width = self.get_parameter("resized_width").value
+            self.resized_width = self.get_parameter("resize.resized_width").value
             self.declare_parameter("resize.resized_height", 0)
-            self.resized_height = self.get_parameter("resized_height").value
+            self.resized_height = self.get_parameter("resize.resized_height").value
             width = int(self.resized_width)
             height = int(self.resized_height)
             self.resized_dim = (width, height)
             self.get_logger().info("[AV Camera] Resize required with dimensions: {0}".format(self.resized_dim))
+
 
         # Publishers
         self.frame_pub = self.create_publisher(Image, self.raw_frame_topic, 1)
