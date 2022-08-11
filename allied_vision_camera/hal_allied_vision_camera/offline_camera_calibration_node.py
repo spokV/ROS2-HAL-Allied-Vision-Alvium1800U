@@ -46,10 +46,16 @@ class CameraCalibrationNode(Node):
             self.get_parameter("calibration_path").get_parameter_value().string_value
         )
 
+
+        self.declare_parameter("display_calibration_feedback", True)
+        self.display_calibration_feedback = (
+            self.get_parameter("display_calibration_feedback").get_parameter_value().bool_value
+        )
+
         if self.calibration_path == "auto":
-            package_share_directory = get_package_share_directory("stereo_calibration")
+            package_share_directory = get_package_share_directory("hal_allied_vision_camera")
             self.calibration_path = package_share_directory + "/calibration/"
-        self.get_logger().warn(f"calibration_path: {self.calibration_path}")
+        self.get_logger().warn(f"Calibration Path: {self.calibration_path}")
 
 
         self.declare_parameter("images_path", "auto")
@@ -58,10 +64,10 @@ class CameraCalibrationNode(Node):
         )
 
         if self.images_path == "auto":
-            package_share_directory = get_package_share_directory("stereo_calibration")
+            package_share_directory = get_package_share_directory("hal_allied_vision_camera")
             self.images_path = package_share_directory + "/calibration_images/"
     
-        self.get_logger().warn(f"images_path: {self.images_path}")
+        self.get_logger().warn(f"Calibration Images Path: {self.images_path}")
 
         self.declare_parameter("calibration_file", "calib_params_cam.xml")
         self.calibration_file = (
@@ -78,7 +84,7 @@ class CameraCalibrationNode(Node):
             self.square_size,
             self.image_size,
             self.minimum_valid_images,
-            display = False
+            display = self.display_calibration_feedback
         )
         self.get_logger().info(
             f'Valid images found: {cam_params["valid_images"]}.'

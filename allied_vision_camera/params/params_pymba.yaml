@@ -1,16 +1,13 @@
 av_node:
   ros__parameters:
-
-    camera_name: DEV_1AB22C00BBE6
-
     publishers:
-      raw_frame: /arm_camera/raw_frame
+      raw_frame: /camera/raw_frame
 
     services:
-      stop_camera: /arm_camera/get_cam_state
+      stop_camera: /camera/get_cam_state
 
     frames: 
-      camera_link: wrist_camera_link
+      camera_link: camera_link
       
     rotation_angle: 0.0
     
@@ -18,6 +15,10 @@ av_node:
 
     resize:
       enable: False
+      resized_width: 0
+      resized_height: 0
       
     crop:
       enable: False
+      cropped_width: 0
+      cropped_height: 0

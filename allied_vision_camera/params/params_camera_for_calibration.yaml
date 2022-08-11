@@ -10,3 +10,11 @@ av_node:
       camera_link: camera_link
       
     rotation_angle: 0.0
+
+    auto_exposure: Once
+
+    resize:
+      enable: False
+      
+    crop:
+      enable: False

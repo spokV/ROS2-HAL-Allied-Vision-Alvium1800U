@@ -13,3 +13,12 @@ av_node_2:
       camera_link: wrist_camera_link_2
       
     rotation_angle: 180.0
+
+    auto_exposure: Once
+    
+    resize:
+      enable: False
+
+    crop:
+      enable: False
+

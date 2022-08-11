@@ -64,9 +64,9 @@ class CameraAcquisition(Node):
             package_share_directory = get_package_share_directory(
                 "stereo_calibration"
             )
-            self.images_path = package_share_directory + "/calibration_images/"
+            self.images_path = os.path.join(package_share_directory, "calibration_images/")
         
-        self.get_logger().warn(f"images_path: {self.images_path}")
+        self.get_logger().warn(f"Images Path: {self.images_path}")
 
         self.bridge = CvBridge()
         self.counter_images: int = 0
@@ -145,9 +145,12 @@ class CameraAcquisition(Node):
 
         img = self.current_frame
 
+        image_name = "image_" + str(self.counter_images) + ".png"
+        image_path = os.path.join(self.images_path, image_name)
+
         writeStatus = cv2.imwrite(
-            self.images_path + "image_" + str(self.counter_images) + ".png",
-            img,
+            image_path,
+            img
         )
 
         if writeStatus is True:
@@ -155,20 +158,6 @@ class CameraAcquisition(Node):
             self.counter_images += 1
         else:
             self.get_logger().info("Error writing image.")
-
-        
-
-    def remove_file_from_dir(self, folder: str):
-        folder = self.images_path
-        for filename in os.listdir(folder):
-            file_path = os.path.join(folder, filename)
-            try:
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                print("Failed to delete %s. Reason: %s" % (file_path, e))
 
 
 # Main loop function

@@ -131,12 +131,13 @@ class CameraCalibration:
 
     def save_params(self, path: str, filename: str):
 
-        if os.path.exists(path + filename):
-            os.remove(path + filename)
+        file_path = os.path.join(path, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
         try:
                 
-            cv_file = cv2.FileStorage(path + filename, cv2.FILE_STORAGE_WRITE)
+            cv_file = cv2.FileStorage(file_path, cv2.FILE_STORAGE_WRITE)
 
             cv_file.write('mtx',self.__calibration_data["mtx"])
             cv_file.write('dist',self.__calibration_data["dist"])
