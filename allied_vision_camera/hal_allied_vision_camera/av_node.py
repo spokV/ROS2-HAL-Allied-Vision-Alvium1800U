@@ -199,7 +199,6 @@ class AVNode(Node):
         if self.need_to_crop_image:
             cur_height, cur_width, _ = self.frame.shape
 
-            self.get_logger().info("[AV Camera] Image Cropped. New shape: {0}".format(self.frame.shape))
             delta_width = int((cur_width - self.cropped_width) / 2.0)
             delta_height = int((cur_height - self.cropped_height) / 2.0)
 
