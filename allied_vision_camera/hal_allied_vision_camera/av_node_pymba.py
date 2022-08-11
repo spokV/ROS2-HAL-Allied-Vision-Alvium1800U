@@ -5,7 +5,6 @@ import threading
 import sys
 import numpy as np
 import cv2 as cv
-from pymba import *
 
 import rclpy
 from rclpy.node import Node
@@ -16,6 +15,8 @@ from std_msgs.msg import Header
 from cv_bridge import CvBridge
 
 from allied_vision_camera_interfaces.srv import CommandCamera
+
+from pymba import *
 
 # Class definition of the calibration function
 class AVNode(Node):
