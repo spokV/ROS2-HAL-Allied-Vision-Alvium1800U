@@ -83,17 +83,19 @@ class CameraCalibrationNode(Node):
             self.chessboard_size,
             self.square_size,
             self.image_size,
-            self.minimum_valid_images,
+            5,
             display = self.display_calibration_feedback
-        )
-        self.get_logger().info(
-            f'Valid images found: {cam_params["valid_images"]}.'
         )
 
         if not cam_params:
             raise Exception(
                 "Minimum number of valid images not reached in camera calibration."
             )
+
+
+        self.get_logger().info(
+            f'Valid images found: {cam_params["valid_images"]}.'
+        )
 
         try:
             cam_calibration.save_params(
