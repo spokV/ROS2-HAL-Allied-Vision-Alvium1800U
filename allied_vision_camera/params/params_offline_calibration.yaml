@@ -6,9 +6,9 @@ offline_camera_calibration:
     chessboard_size: [7, 9]
     square_size: 30.0 # mm
 
-    image_size: [256, 256] # (width, height)
+    image_size: [512, 512] # (width, height)
     
-    images_path: /home/marco/xarm_devel/src/dependencies/ROS2-HAL-Allied-Vision-Alvium1800U/allied_vision_camera/calibration_images/
-    calibration_path: /home/marco/xarm_devel/src/dependencies/ROS2-HAL-Allied-Vision-Alvium1800U/allied_vision_camera/calibration/
+    images_path: /home/marco/xarm_devel/src/AA_Resources_Calibration/tasi_left_cam_calibration/512x512/
+    calibration_path: /home/marco/xarm_devel/src/AA_Resources_Calibration/tasi_left_cam_calibration/512x512/calibration/
 
     calibration_file: calib_cam.xml

@@ -99,6 +99,7 @@ class AVNode(Node):
 
     def get_camera(self, camera_id):
         with Vimba.get_instance() as vimba:
+
             if camera_id == "auto":
                 self.get_logger().info('Access First Camera Available')
                 cams = vimba.get_all_cameras()
@@ -107,7 +108,6 @@ class AVNode(Node):
                     return False
 
                 self.cam = cams[0]
-
 
             else:
                 self.get_logger().info('Access Camera {0}'.format(camera_id))
@@ -118,6 +118,7 @@ class AVNode(Node):
                     self.get_logger().info('Failed to access Camera \'{}\'. Abort.'.format(camera_id))
                     return False
 
+        self.get_logger().info('Camera {0}'.format(self.cam))
         return True
 
 
@@ -203,7 +204,6 @@ class AVNode(Node):
             delta_height = int((cur_height - self.cropped_height) / 2.0)
 
             self.frame = self.frame[delta_height:(cur_height-delta_height), delta_width:(cur_width-delta_width)]
-            self.get_logger().info("[AV Camera] Image Cropped. New shape: {0}".format(self.frame.shape))
         
 
         if self.need_to_resize_image:

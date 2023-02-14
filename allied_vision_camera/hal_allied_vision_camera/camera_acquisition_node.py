@@ -110,9 +110,10 @@ class CameraAcquisition(Node):
         while (
             self.counter_images <= self.number_of_images_to_save
         ):
+            rescaled_frame = cv2.resize(self.current_frame, (1000, 1000)) 
 
-            cv2.imshow("LiveCamera -- Camera", self.current_frame)
-            key = cv2.waitKey(500)
+            cv2.imshow("LiveCamera -- Camera", rescaled_frame)
+            key = cv2.waitKey(50)
 
             if key == ord("q"):
                 self.get_logger().info("Calibration process has been stopped.")
@@ -154,7 +155,7 @@ class CameraAcquisition(Node):
         )
 
         if writeStatus is True:
-            self.get_logger().info("Image written.")
+            self.get_logger().info("Image {0} written.".format(self.counter_images))
             self.counter_images += 1
         else:
             self.get_logger().info("Error writing image.")
