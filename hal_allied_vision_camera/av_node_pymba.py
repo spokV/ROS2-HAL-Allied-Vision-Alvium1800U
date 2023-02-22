@@ -14,9 +14,7 @@ from std_msgs.msg import Header
 
 from cv_bridge import CvBridge
 
-from allied_vision_camera_interfaces.srv import CommandCamera
-from vimba import *
-
+from pymba import *
 
 # Class definition of the calibration function
 class AVNode(Node):
@@ -36,10 +34,7 @@ class AVNode(Node):
         self.declare_parameter("publishers.raw_frame", "/camera/raw_frame")
         self.raw_frame_topic = self.get_parameter("publishers.raw_frame").value
 
-        self.declare_parameter("services.stop_camera", "/camera/stop_camera")
-        self.stop_cam_service = self.get_parameter("services.stop_camera").value
-
-        self.declare_parameter("rotation_angle", "0.0")
+        self.declare_parameter("rotation_angle", 0.0)
         self.rotation_angle = float(self.get_parameter("rotation_angle").value)
 
         self.declare_parameter("frames.camera_link", "camera_link")
@@ -78,111 +73,66 @@ class AVNode(Node):
         # Publishers
         self.frame_pub = self.create_publisher(Image, self.raw_frame_topic, 1)
 
-        # Service: stop acquisition
-        self.stop_service = self.create_service(CommandCamera, self.stop_cam_service, self.acquisition_service)
         self.get_logger().info("[AV Camera] Node Ready")
-
-
-    def print_camera(self, cam: Camera):
-        self.get_logger().info('/// Camera Name   : {}'.format(cam.get_name()))
-        self.get_logger().info('/// Model Name    : {}'.format(cam.get_model()))
-        self.get_logger().info('/// Camera ID     : {}'.format(cam.get_id()))
-        self.get_logger().info('/// Serial Number : {}'.format(cam.get_serial()))
-        self.get_logger().info('/// Interface ID  : {}\n'.format(cam.get_interface_id()))
-
-
-    def acquisition_service(self, request, response):
-        self.start_acquisition = request.command_state
-        response.cam_state = self.start_acquisition
-        return response
-
-
-    def get_camera(self, camera_id):
-        with Vimba.get_instance() as vimba:
-
-            if camera_id == "auto":
-                self.get_logger().info('Access First Camera Available')
-                cams = vimba.get_all_cameras()
-                if not cams:
-                    self.get_logger().info('No Cameras accessible. Abort.')
-                    return False
-
-                self.cam = cams[0]
-
-            else:
-                self.get_logger().info('Access Camera {0}'.format(camera_id))
-                try:
-                    self.cam = vimba.get_camera_by_id(camera_id)
-
-                except VimbaCameraError:
-                    self.get_logger().info('Failed to access Camera \'{}\'. Abort.'.format(camera_id))
-                    return False
-
-        self.get_logger().info('Camera {0}'.format(self.cam))
-        return True
-
-
-    def setup_camera(self):
-        with self.cam:
-            # Try to adjust GeV packet size. This Feature is only available for GigE - Cameras.
-            try:
-                self.cam.GVSPAdjustPacketSize.run()
-
-                while not self.cam.GVSPAdjustPacketSize.is_done():
-                    pass
-
-            except (AttributeError, VimbaFeatureError):
-                pass
-
-    
-    def print_feature(self, feature):
-        try:
-            value = feature.get()
-
-        except (AttributeError, VimbaFeatureError):
-            value = None
-
-        self.get_logger().info('/// Feature name   : {}'.format(feature.get_name()))
-        self.get_logger().info('/// Display name   : {}'.format(feature.get_display_name()))
-        self.get_logger().info('/// Tooltip        : {}'.format(feature.get_tooltip()))
-        self.get_logger().info('/// Description    : {}'.format(feature.get_description()))
-        self.get_logger().info('/// SFNC Namespace : {}'.format(feature.get_sfnc_namespace()))
-        self.get_logger().info('/// Unit           : {}'.format(feature.get_unit()))
-        self.get_logger().info('/// Value          : {}\n'.format(str(value)))
-
-    
-    def list_cam_features(self, camera):
-        for feature in camera.get_all_features():
-            self.print_feature(feature)
 
 
     # This function save the current frame in a class attribute
     def get_frame(self):
 
-        with Vimba.get_instance():
-            if self.get_camera(self.camera_name):
+        with Vimba() as vimba:
 
-                with self.cam:
-                    self.setup_camera()
+            cam_found = True
 
-                    self.cam.get_feature_by_name('ExposureAuto').set(self.auto_exposure)
+            try:
+                self.get_logger().info("Available Cameras: {0}".format(vimba.camera_ids()))
+                
+                # Open the cam and set the mode
+                if self.camera_name == "auto":
+                    self.get_logger().info("Opening First Camera Available")
+                    self.cam_obj = vimba.camera(0)
+                else:
 
-                    #### LIST FEATURES
-                    #self.list_cam_features(self.cam)
-                    
+                    cam_id = 0
+                    cam_count = len(vimba.camera_ids())
+                    for cam_name_id in vimba.camera_ids():
+                        if cam_name_id == self.camera_name:
+                            self.cam_obj = vimba.camera(cam_id)
+                            break
+                        cam_id = cam_id + 1
+
+                    if cam_id >= cam_count:
+                        self.get_logger().info("Camera with name {0} not found".format(self.camera_name))
+
+                self.cam_obj.open()
+
+
+                for feature_name in self.cam_obj.feature_names():
+                    feature = self.cam_obj.feature(feature_name)
+                    #print(feature.info)
+
+                # read a feature value
+                feature = self.cam_obj.feature('ExposureAuto')
+                feature.value = self.auto_exposure
+
+            except:
+                self.get_logger().info("[AV Camera] No AlliedVision Alvium cameras found, check connection.")
+                cam_found = False
+
+            if cam_found:
+                try:
+                    self.cam_obj.arm("SingleFrame")
                     self.get_logger().info("[AV Camera] Frame acquisition has started.")
                     
                     while self.start_acquisition:
-                        for current_frame in self.cam.get_frame_generator(limit=1, timeout_ms=3000):
-                            
-                            if current_frame.get_status() == FrameStatus.Complete:
-                                self.frame = current_frame.as_opencv_image()
-                                self.publish_frame()
-                            else:
-                                self.get_logger().info("Frame Incomplete")
-            else:
-                self.get_logger().info("[AV Camera] No AV Camera Found. Check Connection.")
+                        current_frame = self.cam_obj.acquire_frame()
+                        self.frame = current_frame.buffer_data_numpy()
+                        self.publish_frame()
 
+                    self.cam_obj.disarm()
+                    self.cam_obj.close()
+                except:
+                    self.cam_obj.disarm()
+                    self.cam_obj.close()
 
 
     def exit(self):
@@ -195,25 +145,26 @@ class AVNode(Node):
         if len(self.frame) == 0:
             self.get_logger().info("[AV Camera] No Image Returned")
             return
-
-
+        
         if self.need_to_crop_image:
             cur_height, cur_width, _ = self.frame.shape
 
+            self.get_logger().info("[AV Camera] Image Cropped. New shape: {0}".format(self.frame.shape))
             delta_width = int((cur_width - self.cropped_width) / 2.0)
             delta_height = int((cur_height - self.cropped_height) / 2.0)
 
             self.frame = self.frame[delta_height:(cur_height-delta_height), delta_width:(cur_width-delta_width)]
+            self.get_logger().info("[AV Camera] Image Cropped. New shape: {0}".format(self.frame.shape))
         
 
         if self.need_to_resize_image:
             self.frame = cv.resize(self.frame, self.resized_dim, interpolation = cv.INTER_AREA)
 
+
         if self.rotation_angle != 0.0:
             image_center = tuple(np.array(self.frame.shape[1::-1]) / 2)
             rot_mat = cv.getRotationMatrix2D(image_center, self.rotation_angle, 1.0)
             self.frame = cv.warpAffine(self.frame, rot_mat, self.frame.shape[1::-1], flags=cv.INTER_LINEAR)
-
 
         self.image_message = self.bridge.cv2_to_imgmsg(self.frame, encoding="mono8")
         self.image_message.header = Header()
@@ -236,8 +187,6 @@ def main(args=None):
         node.get_logger().info('[AV Camera] Exception:', file=sys.stderr)
         node.exit()
         raise
-    finally:
-        rclpy.shutdown() 
 
 
 if __name__ == "__main__":
