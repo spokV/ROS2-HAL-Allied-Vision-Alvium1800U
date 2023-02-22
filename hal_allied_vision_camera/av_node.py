@@ -161,13 +161,16 @@ class AVNode(Node):
                     self.get_logger().info("[AV Camera] Frame acquisition has started.")
                     
                     while self.start_acquisition:
-                        for current_frame in self.cam.get_frame_generator(limit=1, timeout_ms=3000):
-                            
-                            if current_frame.get_status() == FrameStatus.Complete:
-                                self.frame = current_frame.as_opencv_image()
-                                self.publish_frame()
-                            else:
-                                self.get_logger().info("Frame Incomplete")
+                        try:
+                            for current_frame in self.cam.get_frame_generator(limit=1, timeout_ms=3000):
+                                
+                                if current_frame.get_status() == FrameStatus.Complete:
+                                    self.frame = current_frame.as_opencv_image()
+                                    self.publish_frame()
+                                else:
+                                    self.get_logger().info("Frame Incomplete")
+                        except:
+                            pass
                 
                 self.get_logger().info("Releasing Camera")
 
