@@ -14,7 +14,8 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Header
 
 from cv_bridge import CvBridge
-from vimba import *
+
+import vimba
 
 
 # Class definition of the calibration function
@@ -77,7 +78,7 @@ class AVNode(Node):
         self.get_logger().info("[AV Camera] Node Ready")
 
 
-    def print_camera(self, cam: Camera):
+    def print_camera(self, cam: vimba.Camera):
         self.get_logger().info('/// Camera Name   : {}'.format(cam.get_name()))
         self.get_logger().info('/// Model Name    : {}'.format(cam.get_model()))
         self.get_logger().info('/// Camera ID     : {}'.format(cam.get_id()))
@@ -86,11 +87,11 @@ class AVNode(Node):
 
 
     def get_camera(self, camera_id):
-        with Vimba.get_instance() as vimba:
+        with vimba.Vimba.get_instance() as vimba_obj:
 
             if camera_id == "auto":
                 self.get_logger().info('Access First Camera Available')
-                cams = vimba.get_all_cameras()
+                cams = vimba_obj.get_all_cameras()
                 if not cams:
                     self.get_logger().info('No Cameras accessible. Abort.')
                     return False
@@ -100,9 +101,9 @@ class AVNode(Node):
             else:
                 self.get_logger().info('Access Camera {0}'.format(camera_id))
                 try:
-                    self.cam = vimba.get_camera_by_id(camera_id)
+                    self.cam = vimba_obj.get_camera_by_id(camera_id)
 
-                except VimbaCameraError:
+                except vimba.VimbaCameraError:
                     self.get_logger().info('Failed to access Camera \'{}\'. Abort.'.format(camera_id))
                     return False
 
@@ -119,7 +120,7 @@ class AVNode(Node):
                 while not self.cam.GVSPAdjustPacketSize.is_done():
                     pass
 
-            except (AttributeError, VimbaFeatureError):
+            except (AttributeError, vimba.VimbaFeatureError):
                 pass
 
     
@@ -127,7 +128,7 @@ class AVNode(Node):
         try:
             value = feature.get()
 
-        except (AttributeError, VimbaFeatureError):
+        except (AttributeError, vimba.VimbaFeatureError):
             value = None
 
         self.get_logger().info('/// Feature name   : {}'.format(feature.get_name()))
@@ -147,7 +148,7 @@ class AVNode(Node):
     # This function save the current frame in a class attribute
     def get_frame(self):
 
-        with Vimba.get_instance():
+        with vimba.Vimba.get_instance():
             if self.get_camera(self.camera_name):
 
                 with self.cam:
@@ -161,16 +162,18 @@ class AVNode(Node):
                     self.get_logger().info("[AV Camera] Frame acquisition has started.")
                     
                     while self.start_acquisition:
+                        
                         try:
-                            for current_frame in self.cam.get_frame_generator(limit=1, timeout_ms=3000):
-                                
-                                if current_frame.get_status() == FrameStatus.Complete:
-                                    self.frame = current_frame.as_opencv_image()
-                                    self.publish_frame()
-                                else:
-                                    self.get_logger().info("Frame Incomplete")
-                        except:
-                            pass
+                            current_frame = self.cam.get_frame(timeout_ms=3000)
+                            
+                            if current_frame.get_status() == vimba.FrameStatus.Complete:
+                                self.frame = current_frame.as_opencv_image()
+                                self.publish_frame()
+                            else:
+                                self.get_logger().info("Frame Incomplete")
+
+                        except vimba.VimbaTimeout:
+                            print("Timeout.. Retry")
                 
                 self.get_logger().info("Releasing Camera")
 
@@ -181,7 +184,7 @@ class AVNode(Node):
 
     def exit(self):
         self.start_acquisition = False
-        time.sleep(2.0)
+        time.sleep(1.0)
         self.thread1.join()
 
 
