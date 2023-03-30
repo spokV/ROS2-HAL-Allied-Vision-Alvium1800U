@@ -35,10 +35,11 @@ class CameraCalibration:
         **kwargs,
     ) -> Dict[str, Any]:
 
-        display: bool = kwargs.get("display", True)
+        display: bool = False
         criteria: Any = kwargs.get(
             "criteria", (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
         )
+        out_images_path: Any = kwargs.get("out_images_path", None)
 
         # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
         objp = np.zeros((chessboard_size[0] * chessboard_size[1], 3), np.float32)
@@ -59,6 +60,8 @@ class CameraCalibration:
             raise ValueError("No images found in specified directory.")
 
         valid_images = 0
+
+        count = 0
 
         for fname in images:
 
@@ -86,12 +89,23 @@ class CameraCalibration:
                 if display:
                     cv2.imshow("Calibration Pattern Detected in Image", img)
                     cv2.waitKey(500)
+
+                if out_images_path is not None:
+                    filename = fname.split("/")[-1]
+                    print(filename)
+                    out_filepath = out_images_path + filename
+                    print(out_filepath)
+                    cv2.imwrite(out_filepath, img)
+
                 valid_images += 1
+
+            count = count + 1
                 
         if valid_images < minimum_valid_images:
             return {}
 
-        cv2.destroyAllWindows()
+        if display:
+            cv2.destroyAllWindows()
 
         ############## CALIBRATION ##############
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(

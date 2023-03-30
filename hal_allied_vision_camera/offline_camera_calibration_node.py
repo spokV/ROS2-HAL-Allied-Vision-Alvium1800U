@@ -52,6 +52,9 @@ class CameraCalibrationNode(Node):
             self.get_parameter("display_calibration_feedback").get_parameter_value().bool_value
         )
 
+        # self.out_images_path = None
+        self.out_images_path = "/home/marco/erossp_ros2_devel/src/EROSSP_Pose_Estimation/dlr_new_calibration/output_calibration_images/"
+
         if self.calibration_path == "auto":
             package_share_directory = get_package_share_directory("hal_allied_vision_camera")
             self.calibration_path = package_share_directory + "/calibration/"
@@ -84,7 +87,8 @@ class CameraCalibrationNode(Node):
             self.square_size,
             self.image_size,
             5,
-            display = self.display_calibration_feedback
+            display = self.display_calibration_feedback,
+            out_images_path = self.out_images_path
         )
 
         if not cam_params:
