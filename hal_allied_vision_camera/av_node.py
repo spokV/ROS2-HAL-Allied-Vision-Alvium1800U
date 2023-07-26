@@ -332,9 +332,9 @@ class Handler:
             return
 
         elif frame.get_status() == FrameStatus.Complete:
-            if frame.get_id() % 100 == 0:
-                #self.get_logger().info('/// acquired  : {}'.format(frame.get_id()))
-                print('acquired {}'.format(frame), flush=True)
+            #if frame.get_id() % 100 == 0:
+            #    #self.get_logger().info('/// acquired  : {}'.format(frame.get_id()))
+            #    print('acquired {}'.format(frame), flush=True)
 
             self.frame = frame.as_opencv_image()
             
@@ -350,8 +350,8 @@ class Handler:
             self.image_message.header.frame_id = self.camera_link
             self.frame_pub.publish(self.image_message)
             
-        else:
-            print('here')
+        #else:
+        #    print('here')
         cam.queue_frame(frame)
 
 ##### Main Function #####
