@@ -52,6 +52,15 @@ class AVNode(Node):
         self.declare_parameter("auto_exposure", "Once")
         self.auto_exposure = self.get_parameter("auto_exposure").value
 
+        self.declare_parameter("max_exposure_time", 13000)
+        self.max_exposure_time = self.get_parameter("max_exposure_time").value
+        
+        self.declare_parameter("max_auto_exposure_time", 13000)
+        self.max_auto_exposure_time = self.get_parameter("max_auto_exposure_time").value
+        
+        self.declare_parameter("gain", 20)
+        self.gain = self.get_parameter("gain").value
+        
         if self.auto_exposure not in ["Off", "Once", "Continuous"]:
             self.get_logger().info("[AV Camera] Auto Exposure must be Off, Once or Continuous")
             self.auto_exposure = "Once"
@@ -130,19 +139,25 @@ class AVNode(Node):
                 pass
 
             #self.cam.AcquisitionFrameRate.set(30)
-            self.cam.ExposureTime.set(86000)
-            self.cam.ExposureAutoMax.set(86000)
-            self.cam.DeviceLinkThroughputLimit.set(400000000)
-            self.cam.Gain.set(20)
-            # Try to adjust GeV packet size. This Feature is only available for GigE - Cameras.
-            #try:
-            #    self.cam.GVSPAdjustPacketSize.run()
-
-            #    while not self.cam.GVSPAdjustPacketSize.is_done():
-            #        pass
-
-            #except (AttributeError, VimbaFeatureError):
-            #    pass
+            try:
+                self.cam.ExposureTime.set(self.max_exposure_time)
+            except (AttributeError, VimbaFeatureError):
+                pass
+            
+            try:
+                self.cam.ExposureAutoMax.set(self.max_auto_exposure_time)
+            except (AttributeError, VimbaFeatureError):
+                pass
+            
+            try:
+                self.cam.DeviceLinkThroughputLimit.set(400000000)
+            except (AttributeError, VimbaFeatureError):
+                pass
+            
+            try:
+                self.cam.Gain.set(self.gain)
+            except (AttributeError, VimbaFeatureError):
+                pass
 
             # Query available, open_cv compatible pixel formats
             # prefer color formats over monochrome formats

@@ -12,6 +12,9 @@ av_node:
     rotation_angle: 0.0
 
     auto_exposure: Once
+    max_exposure_time: 80000
+    max_auto_exposure_time: 80000
+    gain: 20
 
     resize:
       enable: False
